@@ -14,6 +14,8 @@ from typing import List
 import httpx
 from bs4 import BeautifulSoup
 from urllib.parse import quote_plus
+from gtts import gTTS
+
 
 
 if not os.environ.get("LANGSMITH_API_KEY"):
@@ -46,6 +48,7 @@ class Item(BaseModel):
     collection_name: str
     query_type: str
     time_stamp: float
+    tts_enabled:bool
 
 @app.post("/items/")
 def ask_query(item: Item):
@@ -192,6 +195,14 @@ def ask_query(item: Item):
 
 
     print(f"Timestamp: {item.time_stamp}")
+
+    if(item.tts_enabled==1):
+        language = 'en'
+        tts = gTTS(text=response.text,lang=language,slow=False)
+        tts.save("tts.mp3")
+        return {
+            'response_by_gemini': " ".join(response.text.replace("\n", " ").split()),
+        }
     
     return {
         'message': "Working Fine!",

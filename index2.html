@@ -280,7 +280,105 @@
       animation-delay: 0.4s;
     }
 
-    /* Animations */
+    /* TTS Controls */
+    .tts-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.8rem 1.2rem;
+      background-color: #f8f9ff;
+      border-top: 1px solid #e0e3ff;
+    }
+    
+    .tts-toggle-wrapper {
+      display: flex;
+      align-items: center;
+    }
+    
+    .tts-stop-button {
+      background-color: var(--warning);
+      color: white;
+      border: none;
+      border-radius: 20px;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      margin-left: 10px;
+      transition: all 0.3s ease;
+      display: none;
+    }
+    
+    .tts-stop-button:hover {
+      background-color: #e5177e;
+      transform: scale(1.05);
+    }
+    
+    .tts-stop-button:active {
+      transform: scale(0.98);
+    }
+    
+    .tts-stop-button.visible {
+      display: block;
+    }
+
+    .tts-toggle {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 24px;
+    }
+
+    .tts-toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .tts-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 24px;
+    }
+
+    .tts-slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .tts-slider {
+      background-color: var(--primary);
+    }
+
+    input:checked + .tts-slider:before {
+      transform: translateX(26px);
+    }
+
+    .tts-label {
+      margin-right: 10px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--dark);
+    }
+
+    .tts-icon {
+      margin-left: 8px;
+      font-size: 1rem;
+    }
+
+     /* Animations */
     @keyframes float {
       0%, 100% {
         transform: translateY(0);
@@ -359,6 +457,11 @@
         right: 20px;
         bottom: 20px;
       }
+      
+      .tts-stop-button {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.7rem;
+      }
     }
   </style>
 </head>
@@ -377,7 +480,7 @@
   <!-- Chatbot Widget -->
   <div class="chatbot-widget" id="chatbotWidget">
     <div class="chatbot-face">🤖</div>
-    <div class="chatbot-text">Need Help?</div>
+    <div class="chatbot-text">Need Help ?</div>
   </div>
 
   <!-- Chatbot Container -->
@@ -400,6 +503,17 @@
         </button>
       </div>
     </div>
+    <div class="tts-controls">
+      <div class="tts-toggle-wrapper">
+        <span class="tts-label">Text-to-Speech</span>
+        <label class="tts-toggle">
+          <input type="checkbox" id="ttsToggle">
+          <span class="tts-slider"></span>
+        </label>
+        <span class="tts-icon">🔊</span>
+      </div>
+      <button id="ttsStopButton" class="tts-stop-button">Stop</button>
+    </div>
   </div>
 
   <script>
@@ -410,6 +524,26 @@
     const chatbotClose = document.getElementById('chatbotClose');
     const chatbotBody = document.getElementById('chatbotBody');
     const optionButtons = document.querySelectorAll('.option-button');
+    const ttsToggle = document.getElementById('ttsToggle');
+    const ttsStopButton = document.getElementById('ttsStopButton');
+
+    // Track speaking state
+    let isSpeaking = false;
+
+    // Check for TTS support
+    if (!('speechSynthesis' in window)) {
+      console.warn("Text-to-speech not supported in this browser");
+      ttsToggle.disabled = true;
+      const ttsLabel = document.querySelector('.tts-label');
+      ttsLabel.textContent += " (Not supported)";
+      ttsLabel.style.opacity = "0.7";
+    }
+
+    // Load voices when they become available
+    let voicesLoaded = false;
+    window.speechSynthesis.onvoiceschanged = function() {
+      voicesLoaded = true;
+    };
 
     // Helper functions
     function appendMessage(text, sender) {
@@ -439,6 +573,43 @@
       }
     }
 
+    function speakText(text) {
+      // Stop any currently playing speech
+      window.speechSynthesis.cancel();
+      isSpeaking = false;
+      ttsStopButton.classList.remove('visible');
+      
+      if (ttsToggle.checked && 'speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US';
+        utterance.rate = 1;
+        utterance.pitch = 1;
+        
+        // Try to select an English voice
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0) {
+          const englishVoice = voices.find(voice => voice.lang.includes('en'));
+          if (englishVoice) {
+            utterance.voice = englishVoice;
+          }
+        }
+        
+        // Show stop button when speaking starts
+        utterance.onstart = function() {
+          isSpeaking = true;
+          ttsStopButton.classList.add('visible');
+        };
+        
+        // Hide stop button when speaking ends
+        utterance.onend = utterance.onerror = function() {
+          isSpeaking = false;
+          ttsStopButton.classList.remove('visible');
+        };
+        
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
     // Toggle Chatbot with animation
     chatbotWidget.addEventListener('click', () => {
       if (video && !video.paused) {
@@ -456,6 +627,9 @@
 
     // Close Chatbot with animation
     chatbotClose.addEventListener('click', () => {
+      window.speechSynthesis.cancel();
+      isSpeaking = false;
+      ttsStopButton.classList.remove('visible');
       chatbotContainer.classList.remove('active');
       
       // Unshrink the widget after chat closes
@@ -482,7 +656,7 @@
             query = "Recap the key points from the last minute of the lecture";
             break;
         }
-
+        
         // Add user selection to chat
         appendMessage(e.target.closest('button').innerHTML, 'user');
         
@@ -491,7 +665,6 @@
         
         // Get current timestamp
         const timeSec = video ? Math.floor(video.currentTime) : 0;
-        //const timeSec = 288;
         
         // Send request to backend
         try {
@@ -501,28 +674,47 @@
             body: JSON.stringify({
               query_type: query,
               time_stamp: timeSec,
-              collection_name: 'butter'
+              collection_name: 'butter',
+              tts_enabled: ttsToggle.checked
             })
           });
-          console.log(response.status)
-          
+
           const data = await response.json();
 
-          console.log(data)
-
           removeThinking(typingIndicator);
-          appendMessage(data["response_by_gemini"], 'bot');
+          const botResponse = data["response_by_gemini"] || "No response from bot";
+          appendMessage(botResponse, 'bot');
+          
+          // Speak the response if TTS is enabled
+          speakText(botResponse);
         } catch (err) {
           removeThinking(typingIndicator);
-          appendMessage("Error contacting backend.", 'bot');
+          const errorMessage = "Error contacting backend.";
+          appendMessage(errorMessage, 'bot');
           console.error(err);
+          
+          if (ttsToggle.checked) {
+            speakText(errorMessage);
+          }
         }
       });
+    });
+
+    // Stop TTS when stop button is clicked
+    ttsStopButton.addEventListener('click', function() {
+      if (isSpeaking) {
+        window.speechSynthesis.cancel();
+        isSpeaking = false;
+        ttsStopButton.classList.remove('visible');
+      }
     });
 
     // Close when clicking outside
     document.addEventListener('click', (e) => {
       if (!chatbotContainer.contains(e.target) && !chatbotWidget.contains(e.target)) {
+        window.speechSynthesis.cancel();
+        isSpeaking = false;
+        ttsStopButton.classList.remove('visible');
         chatbotContainer.classList.remove('active');
         setTimeout(() => {
           chatbotWidget.classList.remove('shrink');
