@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Learning Buddy</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4361ee;
+      --primary-light: #4895ef;
+      --secondary: #3f37c9;
+      --dark: #1a1a2e;
+      --light: #f8f9fa;
+      --success: #4cc9f0;
+      --warning: #f72585;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: var(--dark);
+    }
+
+    .header {
+      width: 100%;
+      padding: 1.5rem;
+      text-align: center;
+      background: white;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 2rem;
+    }
+
+    .header h1 {
+      font-weight: 600;
+      color: var(--secondary);
+      font-size: 1.8rem;
+    }
+
+    .video-container {
+      width: 85%;
+      max-width: 900px;
+      margin: 1rem auto 3rem;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+      transition: transform 0.3s ease;
+      background: black;
+    }
+
+    .video-container:hover {
+      transform: translateY(-5px);
+    }
+
+    video {
+      width: 100%;
+      display: block;
+      outline: none;
+    }
+
+    /* Chatbot Widget */
+    .chatbot-widget {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      box-shadow: 0 8px 25px rgba(67, 97, 238, 0.3);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 1000;
+      animation: float 4s ease-in-out infinite;
+    }
+
+    .chatbot-widget.shrink {
+      animation: shrink 0.3s forwards;
+    }
+
+    .chatbot-widget:hover:not(.shrink) {
+      transform: scale(1.1) translateY(-5px);
+      box-shadow: 0 12px 30px rgba(67, 97, 238, 0.4);
+    }
+
+    .chatbot-face {
+      width: 40px;
+      height: 40px;
+      background-color: white;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 5px;
+      font-size: 1.5rem;
+      animation: blink 6s infinite;
+    }
+
+    .chatbot-text {
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-align: center;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+    }
+
+    /* Chatbot Container */
+    .chatbot-container {
+      position: fixed;
+      bottom: 130px;
+      right: 30px;
+      width: 350px;
+      max-height: 500px;
+      background-color: white;
+      border-radius: 20px;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
+      display: none;
+      flex-direction: column;
+      z-index: 1000;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s ease-out;
+    }
+
+    .chatbot-container.active {
+      display: flex;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .chatbot-header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      color: white;
+      padding: 1.2rem;
+      font-weight: 500;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 1.1rem;
+    }
+
+    .chatbot-close {
+      cursor: pointer;
+      font-size: 1.5rem;
+      transition: transform 0.2s;
+      padding: 0 0.5rem;
+    }
+
+    .chatbot-close:hover {
+      transform: scale(1.2);
+    }
+
+    .chatbot-body {
+      padding: 1.5rem;
+      height: 350px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--primary-light) #f1f1f1;
+    }
+
+    .chatbot-body::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .chatbot-body::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+
+    .chatbot-body::-webkit-scrollbar-thumb {
+      background-color: var(--primary-light);
+      border-radius: 10px;
+    }
+
+    .bot-message {
+      background-color: #f1f3ff;
+      padding: 0.8rem 1.2rem;
+      border-radius: 18px 18px 18px 4px;
+      margin-bottom: 1rem;
+      max-width: 85%;
+      align-self: flex-start;
+      font-size: 0.95rem;
+      line-height: 1.4;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      position: relative;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .user-message {
+      background-color: var(--primary);
+      color: white;
+      padding: 0.8rem 1.2rem;
+      border-radius: 18px 18px 4px 18px;
+      margin-bottom: 1rem;
+      max-width: 85%;
+      align-self: flex-end;
+      font-size: 0.95rem;
+      line-height: 1.4;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      position: relative;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .options-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+      margin-top: 1.2rem;
+    }
+
+    .option-button {
+      background-color: white;
+      color: var(--primary);
+      border: 1px solid #e0e3ff;
+      padding: 0.8rem 1.2rem;
+      border-radius: 12px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.3s ease;
+      font-size: 0.9rem;
+      font-weight: 400;
+      box-shadow: 0 2px 8px rgba(67, 97, 238, 0.1);
+    }
+
+    .option-button:hover {
+      background-color: #f1f3ff;
+      transform: translateX(5px);
+      box-shadow: 0 5px 15px rgba(67, 97, 238, 0.15);
+    }
+
+    .option-button:active {
+      transform: translateX(5px) scale(0.98);
+    }
+
+    .typing-indicator {
+      display: flex;
+      padding: 0.8rem 1.2rem;
+      background-color: #f1f3ff;
+      border-radius: 18px 18px 18px 4px;
+      width: fit-content;
+      margin-bottom: 1rem;
+    }
+
+    .typing-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--primary-light);
+      border-radius: 50%;
+      margin: 0 2px;
+      animation: typingAnimation 1.4s infinite ease-in-out;
+    }
+
+    .typing-dot:nth-child(1) {
+      animation-delay: 0s;
+    }
+
+    .typing-dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .typing-dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    /* Animations */
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-10px);
+      }
+    }
+
+    @keyframes shrink {
+      0% {
+        transform: scale(1);
+      }
+      100% {
+        transform: scale(0.8);
+        opacity: 0.7;
+      }
+    }
+
+    @keyframes unshrink {
+      0% {
+        transform: scale(0.8);
+        opacity: 0.7;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes blink {
+      0%, 45%, 55%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.1);
+      }
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes typingAnimation {
+      0%, 60%, 100% {
+        transform: translateY(0);
+      }
+      30% {
+        transform: translateY(-5px);
+      }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .video-container {
+        width: 95%;
+        margin: 1rem auto;
+      }
+
+      .chatbot-container {
+        width: 90%;
+        right: 5%;
+        bottom: 100px;
+      }
+
+      .chatbot-widget {
+        width: 70px;
+        height: 70px;
+        right: 20px;
+        bottom: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Learning Buddy</h1>
+  </div>
+
+  <div class="video-container">
+    <video controls id="lectureVideo" poster="https://via.placeholder.com/800x450?text=Lecture+Video">
+      <source src="LLMEB.mp4" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
+  </div>
+
+  <!-- Chatbot Widget -->
+  <div class="chatbot-widget" id="chatbotWidget">
+    <div class="chatbot-face">🤖</div>
+    <div class="chatbot-text">Need Help?</div>
+  </div>
+
+  <!-- Chatbot Container -->
+  <div class="chatbot-container" id="chatbotContainer">
+    <div class="chatbot-header">
+      <span>Learning Buddy</span>
+      <span class="chatbot-close" id="chatbotClose">×</span>
+    </div>
+    <div class="chatbot-body" id="chatbotBody">
+      <div class="bot-message">Hello! I'm your Learning Buddy. How can I help you with the current content?</div>
+      <div class="options-container">
+        <button class="option-button" data-option="simplify">
+          <span>✨</span> Explain in simpler terms
+        </button>
+        <button class="option-button" data-option="example">
+          <span>🌍</span> Give real-world example
+        </button>
+        <button class="option-button" data-option="recap">
+          <span>📝</span> Recap last minute's key points
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // DOM Elements
+    const video = document.getElementById('lectureVideo');
+    const chatbotWidget = document.getElementById('chatbotWidget');
+    const chatbotContainer = document.getElementById('chatbotContainer');
+    const chatbotClose = document.getElementById('chatbotClose');
+    const chatbotBody = document.getElementById('chatbotBody');
+    const optionButtons = document.querySelectorAll('.option-button');
+
+    // Helper functions
+    function appendMessage(text, sender) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = sender === 'bot' ? 'bot-message' : 'user-message';
+      messageDiv.innerHTML = text;
+      chatbotBody.appendChild(messageDiv);
+      chatbotBody.scrollTop = chatbotBody.scrollHeight;
+    }
+
+    function appendThinking() {
+      const typingIndicator = document.createElement('div');
+      typingIndicator.className = 'typing-indicator';
+      typingIndicator.innerHTML = `
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      `;
+      chatbotBody.appendChild(typingIndicator);
+      chatbotBody.scrollTop = chatbotBody.scrollHeight;
+      return typingIndicator;
+    }
+
+    function removeThinking(typingIndicator) {
+      if (typingIndicator) {
+        typingIndicator.remove();
+      }
+    }
+
+    // Toggle Chatbot with animation
+    chatbotWidget.addEventListener('click', () => {
+      if (video && !video.paused) {
+        video.pause();
+      }
+      
+      // Shrink the widget
+      chatbotWidget.classList.add('shrink');
+      
+      // Show chat after slight delay
+      setTimeout(() => {
+        chatbotContainer.classList.add('active');
+      }, 300);
+    });
+
+    // Close Chatbot with animation
+    chatbotClose.addEventListener('click', () => {
+      chatbotContainer.classList.remove('active');
+      
+      // Unshrink the widget after chat closes
+      setTimeout(() => {
+        chatbotWidget.classList.remove('shrink');
+      }, 300);
+    });
+
+    // Handle Option Selection
+    optionButtons.forEach(button => {
+      button.addEventListener('click', async (e) => {
+        const option = e.target.closest('button').getAttribute('data-option');
+        let query = '';
+        
+        // Determine query based on option
+        switch(option) {
+          case 'simplify':
+            query = "Explain the current concept in simpler terms";
+            break;
+          case 'example':
+            query = "Provide a real-world example of the current concept";
+            break;
+          case 'recap':
+            query = "Recap the key points from the last minute of the lecture";
+            break;
+        }
+
+        // Add user selection to chat
+        appendMessage(e.target.closest('button').innerHTML, 'user');
+        
+        // Show typing indicator
+        const typingIndicator = appendThinking();
+        
+        // Get current timestamp
+        const timeSec = video ? Math.floor(video.currentTime) : 0;
+        //const timeSec = 288;
+        
+        // Send request to backend
+        try {
+          const response = await fetch('http://127.0.0.1:8000/items/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              query_type: query,
+              time_stamp: timeSec,
+              collection_name: 'butter'
+            })
+          });
+          console.log(response.status)
+          
+          const data = await response.json();
+
+          console.log(data)
+
+          removeThinking(typingIndicator);
+          appendMessage(data["response_by_gemini"], 'bot');
+        } catch (err) {
+          removeThinking(typingIndicator);
+          appendMessage("Error contacting backend.", 'bot');
+          console.error(err);
+        }
+      });
+    });
+
+    // Close when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!chatbotContainer.contains(e.target) && !chatbotWidget.contains(e.target)) {
+        chatbotContainer.classList.remove('active');
+        setTimeout(() => {
+          chatbotWidget.classList.remove('shrink');
+        }, 300);
+      }
+    });
+
+    // Add slight delay to video load for demo purposes
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        if (video) {
+          video.controls = true;
+        }
+      }, 500);
+    });
+  </script>
+</body>
+</html>

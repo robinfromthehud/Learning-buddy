@@ -14,7 +14,7 @@ warnings.filterwarnings("ignore")
 from dotenv import load_dotenv
 
 
-print(os.path.exists("audio/IBM.mp3"))
+print(os.path.exists("audio/LLMEB.mp3"))
 
 
 if not os.environ.get("LANGSMITH_API_KEY"):
@@ -37,7 +37,7 @@ api_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.RI0LPaDwrGH_
 
 
 device = "cpu" 
-audio_file = "audio/IBM.mp3"
+audio_file = "audio/LLMEB.mp3"
 batch_size = 1 
 compute_type = "int8" 
 
@@ -164,7 +164,7 @@ client.create_payload_index(
     field_schema="float"
 )
 
-question = "What are LLM challenges ?"
+question = "What are LLMs ?"
 
 print("Question is: ?")
 print(question)
