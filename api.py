@@ -102,7 +102,7 @@ def ask_query(item: Item):
         return {
             'message': "No relevant context found",
             'context_text': "",
-            'response_by_gemini': "No context available to answer the query.",
+            'response_by_gemini': "Please start the lecture. You shouldn't have doubts even before lecture starts.",
         }
 
     if timestamp_embedding:
@@ -198,7 +198,7 @@ def ask_query(item: Item):
 
     if(item.tts_enabled==1):
         language = 'en'
-        tts = gTTS(text=response.text,lang=language,slow=False)
+        tts = gTTS(text=response.text,lang=language,slow=False,tld='co.in')
         tts.save("tts.mp3")
         return {
             'response_by_gemini': " ".join(response.text.replace("\n", " ").split()),

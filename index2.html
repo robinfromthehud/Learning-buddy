@@ -6,15 +6,15 @@
   <title>Learning Buddy</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --primary: #4361ee;
-      --primary-light: #4895ef;
-      --secondary: #3f37c9;
-      --dark: #1a1a2e;
-      --light: #f8f9fa;
-      --success: #4cc9f0;
-      --warning: #f72585;
-    }
+      :root {
+    --primary: #f97316;         /* orange-500 */
+    --primary-light: #fdba74;   /* orange-300 */
+    --secondary: #ea580c;       /* orange-600 */
+    --dark: #1a1a2e;
+    --light: #f8f9fa;
+    --success: #34d399;         /* green-400 */
+    --warning: #f43f5e;         /* rose-500 */
+  }
 
     * {
       box-sizing: border-box;
@@ -36,23 +36,24 @@
 
     .header {
       width: 100%;
-      padding: 1.5rem;
+      padding: 0.75rem 1rem;
       text-align: center;
       background: white;
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      margin-bottom: 2rem;
+      margin-bottom: 0.5rem;
     }
 
     .header h1 {
       font-weight: 600;
       color: var(--secondary);
-      font-size: 1.8rem;
+      font-size: 1.2rem;
+      line-height:1.3;
     }
 
     .video-container {
       width: 85%;
       max-width: 900px;
-      margin: 1rem auto 3rem;
+      margin: 0.5rem auto 1rem;
       border-radius: 16px;
       overflow: hidden;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
@@ -80,7 +81,6 @@
       background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
       border-radius: 50%;
       display: flex;
-      flex-direction: column;
       justify-content: center;
       align-items: center;
       cursor: pointer;
@@ -88,62 +88,69 @@
       transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       z-index: 1000;
       animation: float 4s ease-in-out infinite;
+      overflow: visible;
+      flex-direction: column;
     }
 
     .chatbot-widget.shrink {
       animation: shrink 0.3s forwards;
     }
 
-    .chatbot-widget:hover:not(.shrink) {
-      transform: scale(1.1) translateY(-5px);
-      box-shadow: 0 12px 30px rgba(67, 97, 238, 0.4);
+    .chatbot-widget:hover .chatbot-text {
+      opacity: 1;
+      transform: translateY(0);
     }
 
     .chatbot-face {
-      width: 40px;
-      height: 40px;
-      background-color: white;
-      border-radius: 50%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin-bottom: 5px;
-      font-size: 1.5rem;
-      animation: blink 6s infinite;
+      font-size: 28px;
+      z-index: 2;
     }
 
     .chatbot-text {
-      color: white;
-      font-size: 0.75rem;
-      font-weight: 500;
-      text-align: center;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      position: absolute;
+      bottom: 100%;
+      margin-bottom: 8px;
+      background-color: #fff;
+      color: #333;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 14px;
+      white-space: nowrap;
+      opacity: 0;
+      transform: translateY(10px);
       transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      pointer-events: none;
     }
 
     /* Chatbot Container */
     .chatbot-container {
       position: fixed;
-      bottom: 130px;
-      right: 30px;
-      width: 350px;
-      max-height: 500px;
+      top: 50%;                      /* Center vertically */
+      left: 50%;                     /* Center horizontally */
+      transform: translate(-50%, -50%);
+      width: 600px;                  /* Increased size */
+      height: 600px;
+      min-width: 300px;
+      min-height: 300px;
+      max-width: 90vw;
+      max-height: 90vh;
       background-color: white;
       border-radius: 20px;
       box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
-      overflow: hidden;
+      overflow: auto;                /* Enables scroll if content overflows */
       display: none;
       flex-direction: column;
       z-index: 1000;
       opacity: 0;
-      transform: translateY(20px);
       transition: all 0.3s ease-out;
+      resize: both;                  /* Makes it resizable from bottom-right corner */
     }
+
 
     .chatbot-container.active {
       display: flex;
       opacity: 1;
-      transform: translateY(0);
     }
 
     .chatbot-header {
@@ -169,12 +176,16 @@
     }
 
     .chatbot-body {
+      display: flex;
+      flex-direction: column; /* Stack messages top-to-bottom */
+      align-items: flex-start; /* Bot messages default to left */
       padding: 1.5rem;
-      height: 350px;
+      flex: 1;
       overflow-y: auto;
       scrollbar-width: thin;
       scrollbar-color: var(--primary-light) #f1f1f1;
     }
+
 
     .chatbot-body::-webkit-scrollbar {
       width: 6px;
@@ -191,12 +202,13 @@
     }
 
     .bot-message {
-      background-color: #f1f3ff;
+      background-color: #f1f3ff; /* Your blue background */
       padding: 0.8rem 1.2rem;
       border-radius: 18px 18px 18px 4px;
       margin-bottom: 1rem;
       max-width: 85%;
-      align-self: flex-start;
+      align-self: flex-start; /* LEFT alignment */
+      text-align: left;
       font-size: 0.95rem;
       line-height: 1.4;
       box-shadow: 0 2px 5px rgba(0,0,0,0.05);
@@ -204,14 +216,16 @@
       animation: fadeIn 0.3s ease-out;
     }
 
+
     .user-message {
-      background-color: var(--primary);
+      background-color: var(--primary); /* Your orange color */
       color: white;
       padding: 0.8rem 1.2rem;
       border-radius: 18px 18px 4px 18px;
       margin-bottom: 1rem;
       max-width: 85%;
-      align-self: flex-end;
+      align-self: flex-end; /* RIGHT alignment */
+      text-align: left; /* keep text alignment natural */
       font-size: 0.95rem;
       line-height: 1.4;
       box-shadow: 0 2px 5px rgba(0,0,0,0.05);
@@ -219,11 +233,12 @@
       animation: fadeIn 0.3s ease-out;
     }
 
+
     .options-container {
       display: flex;
       flex-direction: column;
       gap: 0.8rem;
-      margin-top: 1.2rem;
+      margin-top: 1.5rem;
     }
 
     .option-button {
@@ -295,8 +310,8 @@
       align-items: center;
     }
     
-    .tts-stop-button {
-      background-color: var(--warning);
+    .tts-play-pause-button {
+      background-color: var(--primary);
       color: white;
       border: none;
       border-radius: 20px;
@@ -308,17 +323,19 @@
       display: none;
     }
     
-    .tts-stop-button:hover {
-      background-color: #e5177e;
+    .tts-play-pause-button:hover {
+      background-color: var(--secondary);
       transform: scale(1.05);
     }
     
-    .tts-stop-button:active {
+    .tts-play-pause-button:active {
       transform: scale(0.98);
     }
     
-    .tts-stop-button.visible {
-      display: block;
+    .tts-play-pause-button.visible {
+      display: flex;
+      align-items: center;
+      gap: 5px;
     }
 
     .tts-toggle {
@@ -378,7 +395,7 @@
       font-size: 1rem;
     }
 
-     /* Animations */
+    /* Animations */
     @keyframes float {
       0%, 100% {
         transform: translateY(0);
@@ -446,9 +463,20 @@
       }
 
       .chatbot-container {
-        width: 90%;
-        right: 5%;
-        bottom: 100px;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 600px;              /* Increased width */
+        height: 600px;             /* Increased height */
+        background-color: white;
+        border-radius: 20px;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        display: none;
+        flex-direction: column;
+        z-index: 1000;
+        opacity: 0;
+        transition: all 0.3s ease-out;
       }
 
       .chatbot-widget {
@@ -458,7 +486,7 @@
         bottom: 20px;
       }
       
-      .tts-stop-button {
+      .tts-play-pause-button {
         padding: 0.3rem 0.6rem;
         font-size: 0.7rem;
       }
@@ -512,7 +540,10 @@
         </label>
         <span class="tts-icon">🔊</span>
       </div>
-      <button id="ttsStopButton" class="tts-stop-button">Stop</button>
+      <button id="ttsPlayPauseButton" class="tts-play-pause-button">
+        <span id="playPauseIcon">▶</span>
+        <span id="playPauseText">Play</span>
+      </button>
     </div>
   </div>
 
@@ -525,10 +556,13 @@
     const chatbotBody = document.getElementById('chatbotBody');
     const optionButtons = document.querySelectorAll('.option-button');
     const ttsToggle = document.getElementById('ttsToggle');
-    const ttsStopButton = document.getElementById('ttsStopButton');
+    const ttsPlayPauseButton = document.getElementById('ttsPlayPauseButton');
+    const playPauseIcon = document.getElementById('playPauseIcon');
+    const playPauseText = document.getElementById('playPauseText');
 
     // Track speaking state
     let isSpeaking = false;
+    let currentUtterance = null;
 
     // Check for TTS support
     if (!('speechSynthesis' in window)) {
@@ -577,36 +611,81 @@
       // Stop any currently playing speech
       window.speechSynthesis.cancel();
       isSpeaking = false;
-      ttsStopButton.classList.remove('visible');
+      currentUtterance = null;
+      updatePlayPauseButton();
       
       if (ttsToggle.checked && 'speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'en-US';
-        utterance.rate = 1;
-        utterance.pitch = 1;
+        currentUtterance = new SpeechSynthesisUtterance(text);
+        currentUtterance.lang = 'en-US';
+        currentUtterance.rate = 1;
+        currentUtterance.pitch = 1;
         
         // Try to select an English voice
         const voices = window.speechSynthesis.getVoices();
         if (voices.length > 0) {
           const englishVoice = voices.find(voice => voice.lang.includes('en'));
           if (englishVoice) {
-            utterance.voice = englishVoice;
+            currentUtterance.voice = englishVoice;
           }
         }
         
-        // Show stop button when speaking starts
-        utterance.onstart = function() {
+        // Update UI when speaking starts
+        currentUtterance.onstart = function() {
           isSpeaking = true;
-          ttsStopButton.classList.add('visible');
+          updatePlayPauseButton();
         };
         
-        // Hide stop button when speaking ends
-        utterance.onend = utterance.onerror = function() {
+        // Update UI when speaking ends
+        currentUtterance.onend = currentUtterance.onerror = function() {
           isSpeaking = false;
-          ttsStopButton.classList.remove('visible');
+          updatePlayPauseButton();
         };
         
-        window.speechSynthesis.speak(utterance);
+        window.speechSynthesis.speak(currentUtterance);
+      }
+    }
+
+    function toggleSpeech() {
+      if (!currentUtterance) return;
+
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+        setTimeout(() => {
+          isSpeaking = true;
+          updatePlayPauseButton();
+        }, 100);  // short delay to let the resume kick in
+      } else if (isSpeaking) {
+        window.speechSynthesis.pause();
+        isSpeaking = false;
+        updatePlayPauseButton();
+      } else {
+        // If somehow not speaking but not paused
+        window.speechSynthesis.resume();
+        setTimeout(() => {
+          isSpeaking = true;
+          updatePlayPauseButton();
+        }, 100);
+      }
+    }
+
+
+    function updatePlayPauseButton() {
+      if (!currentUtterance) {
+        ttsPlayPauseButton.classList.remove('visible');
+        return;
+      }
+      
+      ttsPlayPauseButton.classList.add('visible');
+      
+      if (window.speechSynthesis.paused) {
+        playPauseIcon.textContent = '▶';
+        playPauseText.textContent = 'Play';
+      } else if (isSpeaking) {
+        playPauseIcon.textContent = '⏸';
+        playPauseText.textContent = 'Pause';
+      } else {
+        playPauseIcon.textContent = '▶';
+        playPauseText.textContent = 'Play';
       }
     }
 
@@ -629,7 +708,8 @@
     chatbotClose.addEventListener('click', () => {
       window.speechSynthesis.cancel();
       isSpeaking = false;
-      ttsStopButton.classList.remove('visible');
+      currentUtterance = null;
+      updatePlayPauseButton();
       chatbotContainer.classList.remove('active');
       
       // Unshrink the widget after chat closes
@@ -638,13 +718,43 @@
       }, 300);
     });
 
+    // DRAGGABLE FUNCTIONALITY
+    let isDragging = false;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    const header = document.querySelector('.chatbot-header');
+
+    header.style.cursor = 'move';
+
+    header.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      const rect = chatbotContainer.getBoundingClientRect();
+      offsetX = e.clientX - rect.left;
+      offsetY = e.clientY - rect.top;
+      chatbotContainer.style.transition = 'none'; // Disable transition while dragging
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        chatbotContainer.style.left = `${e.clientX - offsetX}px`;
+        chatbotContainer.style.top = `${e.clientY - offsetY}px`;
+        chatbotContainer.style.transform = `translate(0, 0)`; // Disable centering while dragging
+      }
+    });
+
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+      chatbotContainer.style.transition = 'all 0.3s ease-out'; // Re-enable transition
+    });
+
+
     // Handle Option Selection
     optionButtons.forEach(button => {
       button.addEventListener('click', async (e) => {
         const option = e.target.closest('button').getAttribute('data-option');
         let query = '';
         
-        // Determine query based on option
         switch(option) {
           case 'simplify':
             query = "Explain the current concept in simpler terms";
@@ -700,21 +810,16 @@
       });
     });
 
-    // Stop TTS when stop button is clicked
-    ttsStopButton.addEventListener('click', function() {
-      if (isSpeaking) {
-        window.speechSynthesis.cancel();
-        isSpeaking = false;
-        ttsStopButton.classList.remove('visible');
-      }
-    });
+    // Play/Pause TTS when button is clicked
+    ttsPlayPauseButton.addEventListener('click', toggleSpeech);
 
     // Close when clicking outside
     document.addEventListener('click', (e) => {
       if (!chatbotContainer.contains(e.target) && !chatbotWidget.contains(e.target)) {
         window.speechSynthesis.cancel();
         isSpeaking = false;
-        ttsStopButton.classList.remove('visible');
+        currentUtterance = null;
+        updatePlayPauseButton();
         chatbotContainer.classList.remove('active');
         setTimeout(() => {
           chatbotWidget.classList.remove('shrink');
