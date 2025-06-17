@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Quiz App</title>
+    <style>
+        :root {
+            --primary-color: #FF7B25;
+            --secondary-color: #FFF5F0;
+            --correct-color: #4CAF50;
+            --incorrect-color: #F44336;
+            --text-color: #333;
+            --light-gray: #FFE5D9;
+            --medium-gray: #FFD1B9;
+            --dark-gray: #757575;
+            --primary: #FF7B25;
+            --secondary: #FF9A5A;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(255, 123, 37, 0.2);
+            padding: 2rem;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: var(--primary-color);
+            font-size: 1.8rem;
+        }
+
+        /* Topic Selection Screen */
+        .topic-selection {
+            text-align: center;
+        }
+
+        .topics-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.8rem;
+            margin: 1.5rem 0;
+        }
+
+        .topic-bubble {
+            background-color: var(--light-gray);
+            border: 2px solid var(--medium-gray);
+            border-radius: 50px;
+            padding: 0.6rem 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .topic-bubble:hover {
+            background-color: var(--medium-gray);
+        }
+
+        .topic-bubble.selected {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .start-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 0.8rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 0.5rem;
+        }
+
+        .start-btn:hover {
+            background-color: #E56A1D;
+            transform: translateY(-2px);
+        }
+
+        .start-btn:disabled {
+            background-color: var(--medium-gray);
+            color: var(--dark-gray);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Quiz Screen */
+        .quiz-container {
+            display: none;
+        }
+
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.8rem;
+            border-bottom: 1px solid var(--medium-gray);
+        }
+
+        .score-container, .timer-container {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        .score, .time {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: var(--light-gray);
+            border-radius: 10px;
+            margin: 0.8rem 0;
+            height: 8px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            border-radius: 10px;
+            background-color: var(--primary-color);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .question-container {
+            margin: 1rem 0;
+            min-height: 180px;
+            display: flex;
+            flex-direction:column;
+        }
+
+        .question-text {
+            font-size: 1.1rem;
+            margin-bottom: 1.2rem;
+            line-height: 1.4;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens:auto;
+            white-space:normal;
+            overflow: hidden;
+        }
+
+        .options-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .option {
+            background-color: var(--light-gray);
+            border: 2px solid var(--medium-gray);
+            border-radius: 8px;
+            padding: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+            word-break:break-word;
+        }
+
+        .option:hover {
+            background-color: var(--medium-gray);
+        }
+
+        .option.selected {
+            border-color: var(--primary-color);
+            background-color: #FFEDE4;
+        }
+
+        .option.correct {
+            border-color: var(--correct-color);
+            background-color: rgba(76, 175, 80, 0.1);
+        }
+
+        .option.incorrect {
+            border-color: var(--incorrect-color);
+            background-color: rgba(244, 67, 54, 0.1);
+        }
+
+        .next-btn-container {
+            height: 50px;
+            position: relative;
+        }
+
+        .next-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.7rem 1.3rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .next-btn.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .next-btn:hover {
+            background-color: #E56A1D;
+        }
+
+        /* Results Screen */
+        .results-container {
+            display: none;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .results-container h2 {
+            color: var(--primary-color);
+            margin-bottom: 0.8rem;
+            font-size: 1.5rem;
+        }
+
+        .score-display {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin: 0.8rem 0;
+        }
+
+        .restart-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 0.8rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1.5rem;
+        }
+
+        .restart-btn:hover {
+            background-color: #E56A1D;
+        }
+
+        /* Loading State */
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 1.5rem 0;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 123, 37, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid var(--primary-color);
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 0.8rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Chatbot Widget */
+        .chatbot-widget {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(255, 123, 37, 0.3);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1000;
+            animation: float 4s ease-in-out infinite;
+            overflow: visible;
+            flex-direction: column;
+        }
+
+        .chatbot-widget.shrink {
+            animation: shrink 0.3s forwards;
+        }
+
+        .chatbot-face {
+            font-size: 28px;
+            z-index: 2;
+        }
+
+        .chatbot-text {
+            position: absolute;
+            bottom: -25px;
+            background: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            pointer-events: none;
+            color: var(--primary-color);
+            border: 1px solid var(--medium-gray);
+        }
+
+        .chatbot-help {
+            position: absolute;
+            right: 100px;
+            bottom: 0;
+            width: 250px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transform: translateX(20px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+            border: 1px solid var(--medium-gray);
+        }
+
+        .chatbot-help.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .chatbot-help h3 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .chatbot-help ul {
+            padding-left: 20px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .chatbot-help li {
+            margin-bottom: 8px;
+        }
+
+        .chatbot-widget:hover .chatbot-text {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @keyframes shrink {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.8); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 500px) {
+            .container {
+                padding: 1.2rem;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+                margin-bottom: 1rem;
+            }
+            
+            .topic-bubble {
+                padding: 0.5rem 1rem;
+                font-size: 0.8rem;
+            }
+            
+            .question-text {
+                font-size: 1rem;
+                margin-bottom: 1rem;
+            }
+            
+            .option {
+                padding: 0.7rem;
+                font-size: 0.9rem;
+            }
+            
+            .score-display {
+                font-size: 2rem;
+            }
+            
+            .chatbot-widget {
+                width: 70px;
+                height: 70px;
+                right: 20px;
+                bottom: 20px;
+            }
+            
+            .chatbot-face {
+                font-size: 24px;
+            }
+            
+            .chatbot-help {
+                width: 200px;
+                right: 90px;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Chatbot Widget -->
+    <div class="chatbot-widget" id="chatbotWidget">
+        <div class="chatbot-face">🤖</div>
+        <div class="chatbot-text">Need Help?</div>
+        <div class="chatbot-help" id="chatbotHelp">
+            <h3>Quiz Tips</h3>
+            <ul>
+                <li>Read each question carefully</li>
+                <li>Manage your time wisely</li>
+                <li>Eliminate wrong options first</li>
+                <li>Trust your first instinct!</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>Quiz Challenge</h1>
+        
+        <!-- Topic Selection Screen -->
+        <div class="topic-selection" id="topicSelection">
+            <h2>Select a Topic</h2>
+            <div class="topics-container" id="topicsContainer">
+                <!-- Topics will be dynamically inserted here -->
+            </div>
+            <button class="start-btn" id="startBtn" disabled>Start Quiz</button>
+        </div>
+        
+        <!-- Loading State -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Loading quiz questions...</p>
+        </div>
+        
+        <!-- Quiz Screen -->
+        <div class="quiz-container" id="quizContainer">
+            <div class="quiz-header">
+                <div class="score-container">
+                    <span>Score:</span>
+                    <span class="score" id="score">0</span>
+                </div>
+                <div class="timer-container">
+                    <span>Time:</span>
+                    <span class="time" id="time">1:00</span>
+                </div>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            
+            <div class="question-container">
+                <div class="question-text" id="questionText"></div>
+                <div class="options-container" id="optionsContainer"></div>
+            </div>
+            
+            <div class="next-btn-container">
+                <button class="next-btn" id="nextBtn">Next Question</button>
+            </div>
+        </div>
+        
+        <!-- Results Screen -->
+        <div class="results-container" id="resultsContainer">
+            <h2>Quiz Completed!</h2>
+            <p>Your final score is:</p>
+            <div class="score-display" id="finalScore">0/7</div>
+            <button class="restart-btn" id="restartBtn">Try Another Quiz</button>
+        </div>
+    </div>
+
+    <script>
+    // DOM Elements
+    const topicSelection = document.getElementById('topicSelection');
+    const topicsContainer = document.getElementById('topicsContainer');
+    const startBtn = document.getElementById('startBtn');
+    const loading = document.getElementById('loading');
+    const quizContainer = document.getElementById('quizContainer');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const questionText = document.getElementById('questionText');
+    const optionsContainer = document.getElementById('optionsContainer');
+    const nextBtn = document.getElementById('nextBtn');
+    const scoreElement = document.getElementById('score');
+    const timeElement = document.getElementById('time');
+    const progressBar = document.getElementById('progressBar');
+    const finalScore = document.getElementById('finalScore');
+    const restartBtn = document.getElementById('restartBtn');
+    const chatbotWidget = document.getElementById('chatbotWidget');
+    const chatbotHelp = document.getElementById('chatbotHelp');
+
+    // Quiz state variables
+    let selectedTopic = null;
+    let questions = [];
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let timer;
+    let timeLeft = 60;
+    let answered = false;
+    let consecutiveCorrect = 0;
+    let helpVisible = false;
+
+    // Initialize the app
+    function init() {
+        fetchTopics();
+        setupEventListeners();
+    }
+
+    // Fetch available topics from backend
+    async function fetchTopics() {
+        try {
+            const response = await fetch('http://127.0.0.1:8000/quiz/topics');
+            if (!response.ok) throw new Error('Failed to fetch topics');
+            const data = await response.json();
+            renderTopics(data.topics || data); // Handle both formats
+        } catch (error) {
+            console.error('Error fetching topics:', error);
+            // Fallback to default topics if API fails
+            renderTopics(['Deep Learning', 'Classical ML', 'RNN', 'Computer Vision']);
+        }
+    }
+
+    // Render topic bubbles
+    function renderTopics(topics) {
+        topicsContainer.innerHTML = '';
+        topics.forEach(topic => {
+            const bubble = document.createElement('div');
+            bubble.className = 'topic-bubble';
+            bubble.textContent = topic;
+            bubble.addEventListener('click', () => selectTopic(topic, bubble));
+            topicsContainer.appendChild(bubble);
+        });
+    }
+
+    // Handle topic selection
+    function selectTopic(topic, bubbleElement) {
+        // Remove selected class from all bubbles
+        document.querySelectorAll('.topic-bubble').forEach(bubble => {
+            bubble.classList.remove('selected');
+        });
+        
+        // Add selected class to clicked bubble
+        bubbleElement.classList.add('selected');
+        
+        // Enable start button
+        startBtn.disabled = false;
+        
+        // Set selected topic
+        selectedTopic = topic;
+    }
+
+    // Start the quiz by fetching questions for selected topic
+    async function startQuiz() {
+        if (!selectedTopic) return;
+        
+        // Show loading state
+        topicSelection.style.display = 'none';
+        loading.style.display = 'block';
+        
+        try {
+            // POST request to get questions for selected topic
+            const response = await fetch('http://127.0.0.1:8000/quiz/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ topic: selectedTopic })
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Failed to fetch questions');
+            }
+            
+            const data = await response.json();
+            
+            // Handle both response formats (with or without "questions" wrapper)
+            questions = data.questions || data;
+            
+            // Validate questions structure
+            if (!Array.isArray(questions)) throw new Error('Invalid questions format');
+            if (questions.length === 0) throw new Error('No questions available');
+            
+            // Additional validation for each question
+            const isValid = questions.every(q => 
+                q.question && 
+                Array.isArray(q.options) && 
+                q.options.length === 4 &&
+                Number.isInteger(q.correctAnswer) &&
+                q.correctAnswer >= 0 &&
+                q.correctAnswer < 4
+            );
+            
+            if (!isValid) throw new Error('Invalid question structure received');
+            
+            loading.style.display = 'none';
+            quizContainer.style.display = 'block';
+            startTimer();
+            showQuestion();
+        } catch (error) {
+            console.error('Error fetching questions:', error);
+            loading.style.display = 'none';
+            alert(`Error: ${error.message}. Please try another topic.`);
+            resetQuiz();
+        }
+    }
+
+    // Display the current question
+    function showQuestion() {
+        if (currentQuestionIndex >= questions.length) {
+            endQuiz();
+            return;
+        }
+        
+        const question = questions[currentQuestionIndex];
+        questionText.textContent = question.question;
+        
+        // Clear previous options
+        optionsContainer.innerHTML = '';
+        
+        // Create new options
+        question.options.forEach((option, index) => {
+            const optionElement = document.createElement('div');
+            optionElement.className = 'option';
+            optionElement.textContent = option;
+            optionElement.addEventListener('click', () => selectAnswer(index));
+            optionsContainer.appendChild(optionElement);
+        });
+        
+        // Update progress
+        const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+        progressBar.style.width = `${progress}%`;
+        
+        // Reset answered state
+        answered = false;
+        nextBtn.classList.remove('visible');
+    }
+
+    // Handle answer selection
+    function selectAnswer(selectedIndex) {
+        if (answered) return;
+        
+        answered = true;
+        const question = questions[currentQuestionIndex];
+        const options = document.querySelectorAll('.option');
+        
+        // Mark selected answer
+        options[selectedIndex].classList.add('selected');
+        
+        // Check if answer is correct
+        if (selectedIndex === question.correctAnswer) {
+            options[selectedIndex].classList.add('correct');
+            score++;
+            scoreElement.textContent = score;
+            consecutiveCorrect++;
+        } else {
+            options[selectedIndex].classList.add('incorrect');
+            // Also show the correct answer
+            options[question.correctAnswer].classList.add('correct');
+            consecutiveCorrect = 0;
+        }
+        
+        // Show next button with smooth transition
+        setTimeout(() => {
+            nextBtn.classList.add('visible');
+        }, 500);
+        
+        // Animate chatbot widget
+        chatbotWidget.classList.add('shrink');
+        setTimeout(() => {
+            chatbotWidget.classList.remove('shrink');
+        }, 300);
+    }
+
+    // Move to next question
+    function nextQuestion() {
+        currentQuestionIndex++;
+        showQuestion();
+    }
+
+    // Timer functions
+    function startTimer() {
+        updateTimerDisplay();
+        timer = setInterval(() => {
+            timeLeft--;
+            updateTimerDisplay();
+            
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                endQuiz();
+            }
+        }, 1000);
+    }
+
+    function updateTimerDisplay() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timeElement.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    }
+
+    // End the quiz
+    function endQuiz() {
+        clearInterval(timer);
+        quizContainer.style.display = 'none';
+        resultsContainer.style.display = 'block';
+        finalScore.textContent = `${score}/${questions.length}`;
+    }
+
+    // Reset the quiz
+    function resetQuiz() {
+        currentQuestionIndex = 0;
+        score = 0;
+        consecutiveCorrect = 0;
+        timeLeft = 60;
+        scoreElement.textContent = '0';
+        topicSelection.style.display = 'block';
+        quizContainer.style.display = 'none';
+        resultsContainer.style.display = 'none';
+        startBtn.disabled = true;
+        
+        // Clear any selected topics
+        document.querySelectorAll('.topic-bubble').forEach(bubble => {
+            bubble.classList.remove('selected');
+        });
+    }
+
+    // Toggle help display
+    function toggleHelp() {
+        helpVisible = !helpVisible;
+        if (helpVisible) {
+            chatbotHelp.classList.add('visible');
+        } else {
+            chatbotHelp.classList.remove('visible');
+        }
+    }
+
+    // Set up event listeners
+    function setupEventListeners() {
+        startBtn.addEventListener('click', startQuiz);
+        nextBtn.addEventListener('click', nextQuestion);
+        restartBtn.addEventListener('click', resetQuiz);
+        
+        // Chatbot widget click event
+        chatbotWidget.addEventListener('click', toggleHelp);
+        
+        // Close help when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!chatbotWidget.contains(e.target)) {
+                helpVisible = false;
+                chatbotHelp.classList.remove('visible');
+            }
+        });
+    }
+
+    // Initialize the app when DOM is loaded
+    document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

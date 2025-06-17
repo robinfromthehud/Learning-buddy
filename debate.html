@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Learning Buddy - Debate Interface</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #ee7643;
+      --primary-light: #ef8e48;
+      --secondary: #c97937;
+      --dark: #1a1a2e;
+      --light: #f8f9fa;
+      --success: #4cc9f0;
+      --warning: #f72585;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      color: var(--dark);
+      overflow: hidden;
+    }
+
+    .header {
+      width: 100%;
+      padding: 1.5rem;
+      text-align: center;
+      background: white;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      position: fixed;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header h1 {
+      font-weight: 600;
+      color: var(--secondary);
+      font-size: 1.8rem;
+    }
+
+    .main-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      padding-top: 80px;
+    }
+
+    .topic-selection {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1rem 2rem 0;
+      text-align: center;
+    }
+
+    .topic-selection h2 {
+      margin-bottom: 1rem;
+      color: var(--secondary);
+      position: sticky;
+      top: 80px;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+      width: 100%;
+      padding: 1rem 0;
+      z-index: 50;
+    }
+
+    .topic-options-container {
+      flex: 1;
+      overflow-y: auto;
+      width: 100%;
+      padding: 0 2rem 2rem;
+    }
+
+    .topic-options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .topic-card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+      transition: all 0.3s ease;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      z-index: 1;
+    }
+
+    .topic-card-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .topic-icon {
+      font-size: 2rem;
+      margin-right: 1rem;
+    }
+
+    .topic-title {
+      font-weight: 500;
+      margin: 0;
+      text-align: left;
+    }
+
+    .topic-description {
+      font-size: 0.9rem;
+      color: #666;
+      line-height: 1.5;
+      text-align: left;
+    }
+
+    .topic-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+
+    .position-selection {
+      display: none;
+      text-align: center;
+      margin: 2rem 0;
+      position: relative;
+      z-index: 2;
+    }
+
+    .position-selection h3 {
+      margin-bottom: 1.5rem;
+      color: var(--secondary);
+      font-size: 1.5rem;
+    }
+
+    .position-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      margin-top: 1rem;
+    }
+
+    .position-button {
+      padding: 0.8rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      background-color: var(--primary);
+      color: white;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .position-button:hover {
+      background-color: var(--secondary);
+      transform: translateY(-2px);
+    }
+
+    .position-button.selected {
+      background-color: var(--secondary);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .selected-topic-display {
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: var(--secondary);
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background-color: #f0f4ff;
+      border-radius: 8px;
+      max-width: 80%;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .debate-container {
+      display: none;
+      flex-direction: column;
+      height: calc(100vh - 80px);
+      padding: 1rem;
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+      margin: 1rem;
+      margin-top: 80px;
+    }
+
+    .debate-header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #eee;
+    }
+
+    .debate-header h2 {
+      color: var(--secondary);
+      margin-bottom: 0.5rem;
+    }
+
+    .problem-statement {
+      font-size: 1rem;
+      color: #555;
+      line-height: 1.6;
+      padding: 1rem;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      margin: 1rem auto;
+      max-width: 800px;
+      white-space: pre-line;
+    }
+
+    .debate-chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+    }
+
+    .message {
+      max-width: 70%;
+      padding: 0.8rem 1.2rem;
+      border-radius: 12px;
+      line-height: 1.5;
+      position: relative;
+      word-wrap: break-word;
+    }
+
+    .user-message {
+      align-self: flex-end;
+      background-color: var(--primary);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+
+    .bot-message {
+      align-self: flex-start;
+      background-color: #e9ecef;
+      color: var(--dark);
+      border-bottom-left-radius: 4px;
+    }
+
+    .debate-input {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.5rem;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .debate-input input {
+      flex: 1;
+      padding: 0.8rem 1rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+    }
+
+    .debate-input input:focus {
+      border-color: var(--primary);
+    }
+
+    .debate-input button {
+      padding: 0.8rem 1.5rem;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .debate-input button:hover {
+      background-color: var(--secondary);
+    }
+
+    .end-debate-btn {
+      margin-top: 1rem;
+      padding: 0.8rem 1.5rem;
+      background-color: var(--warning);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      align-self: center;
+    }
+
+    .end-debate-btn:hover {
+      background-color: #d91a66;
+    }
+
+    .feedback-container {
+      display: none;
+      flex-direction: column;
+      height: calc(100vh - 80px);
+      padding: 2rem;
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+      margin: 1rem;
+      margin-top: 80px;
+      text-align: center;
+    }
+
+    .feedback-container h2 {
+      color: var(--secondary);
+      margin-bottom: 1.5rem;
+    }
+
+    .feedback-text {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      text-align: left;
+      line-height: 1.6;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+    }
+
+    .restart-btn {
+      padding: 0.8rem 1.5rem;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      align-self: center;
+    }
+
+    .restart-btn:hover {
+      background-color: var(--secondary);
+    }
+
+    /* Loading animation */
+    .loading-container {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 255, 255, 0.9);
+      z-index: 1000;
+    }
+
+    .loading-dots {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .loading-dot {
+      width: 12px;
+      height: 12px;
+      margin: 0 5px;
+      background-color: var(--primary);
+      border-radius: 50%;
+      animation: bounce 1.4s infinite ease-in-out;
+    }
+
+    
+
+    .loading-dot:nth-child(1) {
+      animation-delay: -0.32s;
+    }
+
+    .loading-dot:nth-child(2) {
+      animation-delay: -0.16s;
+    }
+
+    @keyframes bounce {
+      0%, 80%, 100% { 
+        transform: scale(0);
+      } 40% { 
+        transform: scale(1);
+      }
+    }
+
+    .loading-text {
+      font-size: 1.2rem;
+      color: var(--secondary);
+      font-weight: 500;
+    }
+
+    /* Typing indicator */
+    .typing-indicator {
+      display: flex;
+      align-items: center;
+      padding: 0.8rem 1.2rem;
+      background-color: #e9ecef;
+      border-radius: 12px;
+      align-self: flex-start;
+      margin-bottom: 1rem;
+      max-width: 70%;
+    }
+
+    .typing-dot {
+      width: 8px;
+      height: 8px;
+      margin: 0 2px;
+      background-color: #6c757d;
+      border-radius: 50%;
+      opacity: 0.4;
+      animation: typing-dot 1.4s infinite ease-in-out;
+    }
+
+    .typing-dot:nth-child(1) {
+      animation-delay: 0s;
+    }
+
+    .typing-dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .typing-dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes typing-dot {
+      0%, 60%, 100% { 
+        transform: translateY(0);
+        opacity: 0.4;
+      } 30% { 
+        transform: translateY(-5px);
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header" id="headerContainer" style="text-align: center; padding: 20px;">
+  <h1 id="mainHeading">Learning Buddy - Debate Interface</h1>
+  <div id="topProblemStatement"
+       style="display: none; margin-top: 15px; font-size: 1.2rem; font-weight: 500; color: #444;">
+  </div>
+</div>
+
+
+  <!-- Loading animation container -->
+  <div class="loading-container" id="loadingContainer">
+    <div class="loading-dots">
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+    </div>
+    <div class="loading-text" id="loadingText">Preparing your debate topic...</div>
+  </div>
+
+  <div class="main-container">
+    <div class="topic-selection" id="topicSelection">
+      <h2>Choose a Debate Topic</h2>
+      <div class="topic-options-container">
+        <div class="topic-options">
+          <div class="topic-card" data-topic="transformers">
+            <div class="topic-card-header">
+              <div class="topic-icon">⚡</div>
+              <h3 class="topic-title">Transformers in NLP</h3>
+            </div>
+            <p class="topic-description">Debate the role and impact of transformer models in natural language processing</p>
+          </div>
+          <div class="topic-card" data-topic="deep_learning">
+            <div class="topic-card-header">
+              <div class="topic-icon">🧠</div>
+              <h3 class="topic-title">Deep Learning</h3>
+            </div>
+            <p class="topic-description">Discuss the fundamentals and future of deep learning architectures</p>
+          </div>
+          <div class="topic-card" data-topic="rnn">
+            <div class="topic-card-header">
+              <div class="topic-icon">🔄</div>
+              <h3 class="topic-title">RNNs vs. Transformers</h3>
+            </div>
+            <p class="topic-description">Compare and contrast recurrent networks with transformer models</p>
+          </div>
+          <div class="topic-card" data-topic="ai_ethics">
+            <div class="topic-card-header">
+              <div class="topic-icon">⚖️</div>
+              <h3 class="topic-title">AI Ethics</h3>
+            </div>
+            <p class="topic-description">Explore the ethical implications of artificial intelligence</p>
+          </div>
+          <div class="topic-card" data-topic="computer_vision">
+            <div class="topic-card-header">
+              <div class="topic-icon">👁️</div>
+              <h3 class="topic-title">Computer Vision</h3>
+            </div>
+            <p class="topic-description">Debate the latest advancements in image recognition and processing</p>
+          </div>
+          <div class="topic-card" data-topic="reinforcement">
+            <div class="topic-card-header">
+              <div class="topic-icon">🎮</div>
+              <h3 class="topic-title">Reinforcement Learning</h3>
+            </div>
+            <p class="topic-description">Discuss the applications and limitations of RL in real-world scenarios</p>
+          </div>
+          <div class="topic-card" data-topic="general_ai">
+            <div class="topic-card-header">
+              <div class="topic-icon">🤖</div>
+              <h3 class="topic-title">General AI</h3>
+            </div>
+            <p class="topic-description">Debate the feasibility and timeline for achieving artificial general intelligence</p>
+          </div>
+          <div class="topic-card" data-topic="quantum">
+            <div class="topic-card-header">
+              <div class="topic-icon">⚛️</div>
+              <h3 class="topic-title">Quantum ML</h3>
+            </div>
+            <p class="topic-description">Explore the potential of quantum computing in machine learning</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="position-selection" id="positionSelection">
+    <div class="selected-topic-display" id="selectedTopicDisplay">
+      <!-- Topic will be displayed here -->
+    </div>
+    <h3>Choose Your Position</h3>
+    <div class="position-buttons">
+      <button class="position-button" data-position="for">In Favor</button>
+      <button class="position-button" data-position="against">Against</button>
+    </div>
+  </div>
+
+  <div class="debate-container" id="debateContainer">
+    <div class="debate-header">
+      <h2 id="debateTopicTitle">Debate Topic</h2>
+      <div class="problem-statement" id="problemStatement">
+        Problem statement will appear here
+      </div>
+    </div>
+    
+    <div class="debate-chat" id="debateChat"></div>
+    
+    <div class="debate-input">
+      <input type="text" id="userInput" placeholder="Type your argument..." autocomplete="off">
+      <button id="sendButton">Send</button>
+    </div>
+    
+    <button class="end-debate-btn" id="endDebateBtn">End Debate</button>
+  </div>
+
+  <div class="feedback-container" id="feedbackContainer">
+    <h2>Debate Feedback</h2>
+    <div class="feedback-text" id="feedbackText"></div>
+    <button class="restart-btn" id="restartBtn">Start New Debate</button>
+  </div>
+
+  <script>
+    // DOM Elements
+    const loadingContainer = document.getElementById('loadingContainer');
+    const loadingText = document.getElementById('loadingText');
+    const topicSelection = document.getElementById('topicSelection');
+    const positionSelection = document.getElementById('positionSelection');
+    const debateContainer = document.getElementById('debateContainer');
+    const feedbackContainer = document.getElementById('feedbackContainer');
+    const topicCards = document.querySelectorAll('.topic-card');
+    const positionButtons = document.querySelectorAll('.position-button');
+    const debateTopicTitle = document.getElementById('debateTopicTitle');
+    const problemStatement = document.getElementById('problemStatement');
+    const debateChat = document.getElementById('debateChat');
+    const userInput = document.getElementById('userInput');
+    const sendButton = document.getElementById('sendButton');
+    const endDebateBtn = document.getElementById('endDebateBtn');
+    const feedbackText = document.getElementById('feedbackText');
+    const restartBtn = document.getElementById('restartBtn');
+    const headerDiv = document.getElementById('headerContainer')
+
+    // Debate state
+    let currentTopic = null;
+    let currentTopicTitle = null;
+    let userPosition = null;
+    let debateActive = false;
+    let debateHistory = [];
+
+    // API endpoint (replace with your actual endpoint)
+    const API_URL = 'http://127.0.0.1:8000/debate/';
+
+    // Topic selection
+    topicCards.forEach(card => {
+      card.addEventListener('click', async () => {
+        currentTopic = card.getAttribute('data-topic');
+        currentTopicTitle = card.querySelector('.topic-title').textContent;
+        
+        // Show loading animation
+        loadingContainer.style.display = 'flex';
+        loadingText.textContent = `Preparing debate topic: ${currentTopicTitle}...`;
+        
+        // Hide topic selection
+        document.querySelector('.main-container').style.display = 'none';
+        
+        // Simulate API call with timeout (replace with actual fetch)
+        try {
+          // Call API to get problem statement
+          const response = await fetch('http://127.0.0.1:8000/debate-topic/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ topic: currentTopic })
+          });
+
+          console.log("chal gya")
+          
+          const data = await response.json();
+
+          console.log(data)
+
+          const problemStatementDiv = document.getElementById('topProblemStatement');
+          if (problemStatementDiv) {
+             problemStatementDiv.style.display = 'block';
+             problemStatementDiv.textContent = data.topic;
+          }
+          
+          // Hide loading animation after response
+          loadingContainer.style.display = 'none';
+          
+          
+          // Update UI with problem statement
+          problemStatement.textContent = data.topic;
+          debateTopicTitle.textContent = currentTopicTitle;
+          
+          // Show position selection
+          positionSelection.style.display = 'block';
+          
+        } catch (error) {
+          console.error('Error fetching problem statement:', error);
+          loadingContainer.style.display = 'none';
+          alert("Error loading problem statement. Please try again.");
+          document.querySelector('.main-container').style.display = 'flex';
+        }
+      });
+    });
+
+    // Position selection
+    positionButtons.forEach(button => {
+      button.addEventListener('click', async () => {
+        positionButtons.forEach(btn => btn.classList.remove('selected'));
+        button.classList.add('selected');
+        userPosition = button.getAttribute('data-position');
+        
+        // Show loading animation
+        loadingContainer.style.display = 'flex';
+        loadingText.textContent = `Starting debate...`;
+        
+        // Start the debate after a short delay to show loading
+        setTimeout(async () => {
+          await startDebate();
+          loadingContainer.style.display = 'none';
+        document.getElementById('headerContainer').style.display = 'none';
+        }, 1000);
+      });
+    });
+
+    // Start debate function
+    async function startDebate() {
+      positionSelection.style.display = 'none';
+      debateContainer.style.display = 'flex';
+      debateActive = true;
+      
+      // Clear previous chat if any
+      debateChat.innerHTML = '';
+      debateHistory = [];
+      
+      // Add initial message from LLM
+      const typingIndicator = addTypingIndicator();
+      
+      try {
+        // Call API to get LLM's opening statement
+        const response = await fetch(`${API_URL}start`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            topic: currentTopic,
+            user_position: userPosition 
+          })
+        });
+        
+        const data = await response.json();
+        removeTypingIndicator(typingIndicator);
+        
+        // Add LLM's opening statement to chat
+        addMessage(data.opening_statement, 'bot');
+        debateHistory.push({ role: 'bot', content: data.opening_statement });
+        
+        // Focus on input field
+        userInput.focus();
+        
+      } catch (error) {
+        console.error('Error starting debate:', error);
+        removeTypingIndicator(typingIndicator);
+        addMessage("Sorry, there was an error starting the debate. Please try again.", 'bot');
+      }
+    }
+
+    // Send user message
+    sendButton.addEventListener('click', sendMessage);
+    userInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+
+    async function sendMessage() {
+      const message = userInput.value.trim();
+      if (!message || !debateActive) return;
+      
+      // Add user message to chat
+      addMessage(message, 'user');
+      debateHistory.push({ role: 'user', content: message });
+      userInput.value = '';
+      
+      // Show typing indicator
+      const typingIndicator = addTypingIndicator();
+      
+      try {
+        // Call API to get LLM's response
+        const response = await fetch(`${API_URL}respond`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            topic: currentTopic,
+            user_position: userPosition,
+            history: debateHistory
+          })
+        });
+        
+        const data = await response.json();
+        removeTypingIndicator(typingIndicator);
+        
+        // Add LLM's response to chat
+        addMessage(data.response, 'bot');
+        debateHistory.push({ role: 'bot', content: data.response });
+        
+      } catch (error) {
+        console.error('Error getting LLM response:', error);
+        removeTypingIndicator(typingIndicator);
+        addMessage("Sorry, there was an error processing your message. Please try again.", 'bot');
+      }
+    }
+
+    // End debate
+    endDebateBtn.addEventListener('click', async () => {
+      debateActive = false;
+      debateContainer.style.display = 'none';
+      
+      // Show loading state for feedback
+      feedbackContainer.style.display = 'flex';
+      feedbackText.textContent = "Generating feedback based on your debate...";
+      
+      try {
+        // Call API to get feedback
+        const response = await fetch(`${API_URL}feedback`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            topic: currentTopic,
+            user_position: userPosition,
+            history: debateHistory
+          })
+        });
+        
+        const data = await response.json();
+        feedbackText.innerHTML = data.feedback.replace(/\n/g, '<br>');
+        
+      } catch (error) {
+        console.error('Error getting feedback:', error);
+        feedbackText.textContent = "Sorry, there was an error generating feedback.";
+      }
+    });
+
+    // Restart debate
+    restartBtn.addEventListener('click', () => {
+      feedbackContainer.style.display = 'none';
+      document.querySelector('.main-container').style.display = 'flex';
+      positionSelection.style.display = 'none';
+      currentTopic = null;
+      currentTopicTitle = null;
+      userPosition = null;
+      debateActive = false;
+      debateHistory = [];
+      debateChat.innerHTML = '';
+    });
+
+    // Helper functions
+    function addMessage(text, sender) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${sender}-message`;
+      messageDiv.textContent = text;
+      debateChat.appendChild(messageDiv);
+      debateChat.scrollTop = debateChat.scrollHeight;
+    }
+
+    function addTypingIndicator() {
+      const typingDiv = document.createElement('div');
+      typingDiv.className = 'typing-indicator';
+      typingDiv.innerHTML = `
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      `;
+      debateChat.appendChild(typingDiv);
+      debateChat.scrollTop = debateChat.scrollHeight;
+      return typingDiv;
+    }
+
+    function removeTypingIndicator(typingDiv) {
+      typingDiv.remove();
+    }
+  </script>
+</body>
+</html>

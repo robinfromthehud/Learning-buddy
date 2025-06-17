@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learning Buddy</title>
+    <style>
+        :root {
+            --primary-orange: #FF6B35;
+            --light-orange: #FFE8DF;
+            --dark-orange: #E56A1D;
+            --white: #FFFFFF;
+            --light-gray: #F5F5F5;
+            --medium-gray: #E0E0E0;
+            --dark-gray: #333333;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+            background-color: var(--light-gray);
+            display: flex;
+        }
+
+        /* Main Layout */
+        .content-wrapper {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+        }
+
+        /* Features Panel (Left Side) */
+        .features-panel {
+            flex: 1;
+            padding: 30px;
+            max-width: 60%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .features-header {
+            margin-bottom: 30px;
+            flex-shrink: 0;
+        }
+
+        .features-header h1 {
+            color: var(--primary-orange);
+            margin: 0 0 10px 0;
+            font-size: 2rem;
+        }
+
+        .features-header p {
+            color: var(--dark-gray);
+            margin: 0;
+            font-size: 1rem;
+        }
+
+        .feature-rows-container {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .feature-rows {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding-bottom: 30px;
+        }
+
+        .feature-row {
+            background-color: var(--white);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border-left: 4px solid var(--primary-orange);
+            cursor: pointer;
+        }
+
+        .feature-row:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.2);
+        }
+
+        .feature-row h3 {
+            color: var(--primary-orange);
+            margin: 0 0 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.2rem;
+        }
+
+        .feature-row p {
+            color: var(--dark-gray);
+            margin: 0;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        /* Buddy Widget Panel (Right Side) */
+        .buddy-panel {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            max-width: 40%;
+            height: 100vh;
+            background-color: var(--light-orange);
+        }
+
+        .buddy-widget {
+            width: 220px;
+            height: 220px;
+            background-color: var(--primary-orange);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            box-shadow: 0 10px 30px rgba(255, 107, 53, 0.3);
+            position: relative;
+            animation: float 3s ease-in-out infinite, pulse 2s infinite;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .buddy-face {
+            font-size: 4rem;
+            margin-bottom: 10px;
+        }
+
+        .buddy-message {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin: 3px 0;
+        }
+
+        .buddy-submessage {
+            font-size: 0.85rem;
+            margin-top: 8px;
+            opacity: 0.9;
+        }
+
+        /* Custom Scrollbar */
+        .feature-rows-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .feature-rows-container::-webkit-scrollbar-track {
+            background: var(--light-gray);
+            border-radius: 10px;
+        }
+
+        .feature-rows-container::-webkit-scrollbar-thumb {
+            background: var(--primary-orange);
+            border-radius: 10px;
+        }
+
+        .feature-rows-container::-webkit-scrollbar-thumb:hover {
+            background: var(--dark-orange);
+        }
+
+        /* Animations */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 10px 30px rgba(255, 107, 53, 0.3); }
+            50% { box-shadow: 0 10px 40px rgba(255, 107, 53, 0.5); }
+        }
+
+        /* Feature Icons */
+        .feature-icon {
+            font-size: 1.3rem;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--light-orange);
+            border-radius: 50%;
+            color: var(--primary-orange);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .content-wrapper {
+                flex-direction: column;
+                height: auto;
+                overflow-y: auto;
+            }
+            .features-panel, .buddy-panel {
+                max-width: 100%;
+                height: auto;
+            }
+            .features-panel {
+                order: 2;
+                padding: 20px;
+            }
+            .buddy-panel {
+                order: 1;
+                padding: 30px 0;
+                background-color: transparent;
+            }
+            .buddy-widget {
+                width: 180px;
+                height: 180px;
+                margin: 0;
+            }
+            body {
+                overflow-y: auto;
+                height: auto;
+            }
+            .features-header h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="content-wrapper">
+        <!-- Features Panel (Left Side) -->
+        <div class="features-panel">
+            <div class="features-header">
+                <h1>Your AI Learning Companion</h1>
+                <p>Explore these intelligent features to enhance your learning experience</p>
+            </div>
+            
+            <div class="feature-rows-container">
+                <div class="feature-rows">
+                    <!-- Interactive Quiz -->
+                    <div class="feature-row" onclick="window.location.href='quiz.html'">
+                        <h3><span class="feature-icon"><i class="fas fa-question-circle"></i></span> Interactive Quiz</h3>
+                        <p>Test your knowledge with adaptive quizzes that adjust difficulty based on your performance, with detailed explanations for each answer.</p>
+                    </div>
+                    
+                    <!-- Lecture Assistance -->
+                    <div class="feature-row" onclick="window.location.href='lecture.html'">
+                        <h3><span class="feature-icon"><i class="fas fa-video"></i></span> Real-time Lecture Assistance</h3>
+                        <p>Get instant explanations, simplified summaries, and relevant examples during video lectures at any point you need help.</p>
+                    </div>
+                    
+                    <!-- AI Debate -->
+                    <div class="feature-row" onclick="window.location.href='debate.html'">
+                        <h3><span class="feature-icon"><i class="fas fa-comments"></i></span> AI Debate Partner</h3>
+                        <p>Engage in thoughtful debates on AI-related topics with your learning buddy, exploring different perspectives and arguments.</p>
+                    </div>
+                    
+                    <!-- Recommended Reads -->
+                    <div class="feature-row" onclick="window.location.href='lecture.html'">
+                        <h3><span class="feature-icon"><i class="fas fa-book-open"></i></span> Personalized Reading Recommendations</h3>
+                        <p>Receive customized reading suggestions based on your lecture history and areas that need reinforcement.</p>
+                    </div>
+
+                    <div class="feature-row" onclick="window.location.href='lecture.html'">
+                        <h3><span class="feature-icon"><i class="fas fa-book-open"></i></span>Competition Recommendations</h3>
+                        <p>Compete on various platforms as you increase your knowledge base</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Buddy Widget Panel (Right Side) -->
+        <div class="buddy-panel">
+            <div class="buddy-widget" onclick="alert('Hello! I can help explain concepts, debate topics, or suggest readings based on your learning needs. Which feature would you like to try first?')">
+                <div class="buddy-message">Hello Learner!</div>
+                <div class="buddy-face">🤖</div>
+                <div class="buddy-message">I'm your Learning Buddy</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add click effect to feature rows
+        document.querySelectorAll('.feature-row').forEach(row => {
+            row.addEventListener('click', function() {
+                // Optional: Add animation/feedback when clicking
+                this.style.transform = "scale(0.98)";
+                setTimeout(() => {
+                    this.style.transform = "";
+                }, 200);
+            });
+        });
+
+        // Buddy widget interaction
+        const buddy = document.querySelector('.buddy-widget');
+        buddy.addEventListener('mouseenter', () => {
+            buddy.style.transform = "scale(1.05)";
+        });
+        buddy.addEventListener('mouseleave', () => {
+            buddy.style.transform = "";
+        });
+    </script>
+</body>
+</html>

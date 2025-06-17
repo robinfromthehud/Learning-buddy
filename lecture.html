@@ -533,7 +533,7 @@
     </div>
     <div class="tts-controls">
       <div class="tts-toggle-wrapper">
-        <span class="tts-label">Text-to-Speech</span>
+        <span class="tts-label">Read-Aloud</span>
         <label class="tts-toggle">
           <input type="checkbox" id="ttsToggle">
           <span class="tts-slider"></span>
@@ -561,8 +561,11 @@
     const playPauseText = document.getElementById('playPauseText');
 
     // Track speaking state
+    let currentAudio = null;
     let isSpeaking = false;
     let currentUtterance = null;
+    let collectedTimestamps = [];
+    let summarySent = false;
 
     // Check for TTS support
     if (!('speechSynthesis' in window)) {
@@ -583,7 +586,22 @@
     function appendMessage(text, sender) {
       const messageDiv = document.createElement('div');
       messageDiv.className = sender === 'bot' ? 'bot-message' : 'user-message';
-      messageDiv.innerHTML = text;
+
+      // Split based on "- " that start a new list item
+      const parts = text.split(/ - /); 
+      let html = '';
+
+      if (parts.length > 1) {
+        html += `<p>${parts[0].trim()}</p><ul>`;
+        for (let i = 1; i < parts.length; i++) {
+          html += `<li>${parts[i].trim()}</li>`;
+        }
+        html += `</ul>`;
+      } else {
+        html = `<p>${text.trim()}</p>`;
+      }
+
+      messageDiv.innerHTML = html;
       chatbotBody.appendChild(messageDiv);
       chatbotBody.scrollTop = chatbotBody.scrollHeight;
     }
@@ -646,38 +664,92 @@
     }
 
     function toggleSpeech() {
-      if (!currentUtterance) return;
+      if (!currentAudio) return;
 
-      if (window.speechSynthesis.paused) {
-        window.speechSynthesis.resume();
-        setTimeout(() => {
-          isSpeaking = true;
-          updatePlayPauseButton();
-        }, 100);  // short delay to let the resume kick in
-      } else if (isSpeaking) {
-        window.speechSynthesis.pause();
-        isSpeaking = false;
-        updatePlayPauseButton();
+      if (currentAudio.paused) {
+        currentAudio.play();
+        isSpeaking = true;
       } else {
-        // If somehow not speaking but not paused
-        window.speechSynthesis.resume();
-        setTimeout(() => {
-          isSpeaking = true;
-          updatePlayPauseButton();
-        }, 100);
+        currentAudio.pause();
+        isSpeaking = false;
       }
+
+      updatePlayPauseButton();
+    }
+
+    function showRecommendedRead(title, url) {
+      const recommendationBox = document.createElement('div');
+      recommendationBox.style = `
+        position: fixed;
+        bottom: 90px;
+        right: 20px;
+        background: #ffffff;
+        padding: 15px 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        z-index: 10000;
+        max-width: 320px;
+        font-family: 'Segoe UI', sans-serif;
+      `;
+
+      recommendationBox.innerHTML = `
+        <div style="
+          background-color: #FF6B00;
+          color: white;
+          padding: 6px 12px;
+          border-radius: 8px;
+          font-weight: bold;
+          font-size: 14px;
+          display: inline-block;
+          margin-bottom: 10px;
+        ">
+          📚 Recommended Read
+        </div>
+
+        <div style="
+          font-weight: 600;
+          font-size: 15px;
+          margin-bottom: 12px;
+          color: #333;
+        ">
+          ${title}
+        </div>
+
+        <a href="${url}" target="_blank" style="
+          display: inline-block;
+          background-color: #FF6B00;
+          color: white;
+          padding: 8px 16px;
+          border-radius: 6px;
+          text-decoration: none;
+          font-size: 14px;
+          font-weight: 500;
+          transition: background-color 0.2s ease;
+        ">Read more</a>
+
+        <div style="
+          margin-top: 10px;
+          font-size: 12px;
+          color: #666;
+          cursor: pointer;
+        " onclick="this.parentElement.remove()">✖ Close</div>
+      `;
+
+      document.body.appendChild(recommendationBox);
     }
 
 
+
+
     function updatePlayPauseButton() {
-      if (!currentUtterance) {
+      if (!currentAudio) {
         ttsPlayPauseButton.classList.remove('visible');
         return;
       }
-      
+
       ttsPlayPauseButton.classList.add('visible');
-      
-      if (window.speechSynthesis.paused) {
+
+      if (currentAudio.paused) {
         playPauseIcon.textContent = '▶';
         playPauseText.textContent = 'Play';
       } else if (isSpeaking) {
@@ -688,6 +760,47 @@
         playPauseText.textContent = 'Play';
       }
     }
+
+     async function sendSummaryRequest() {
+      if (collectedTimestamps.length === 0 || summarySent) return;
+      
+      summarySent = true;
+      const typingIndicator = appendThinking();
+      
+      try {
+        const response = await fetch('http://127.0.0.1:8000/pauses/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            timestamps: collectedTimestamps,
+            collection_name: 'butter'
+          })
+        });
+
+        const data = await response.json();
+        console.log("CHAL GYA")
+        console.log(data)
+        removeThinking(typingIndicator);
+        
+        if (data.docs) {
+          appendMessage("Here's a summary of key points from your queries:", 'bot');
+          appendMessage(data.docs, 'bot');
+          
+          if (ttsToggle.checked) {
+            speakText("Here's a summary of key points from your queries: " + data.docs);
+          }
+        }
+
+        if(data.title && data.url){
+          showRecommendedRead(data.title,data.url)
+        }
+      } catch (err) {
+        removeThinking(typingIndicator);
+        appendMessage("Error generating summary", 'bot');
+        console.error(err);
+      }
+    }
+
 
     // Toggle Chatbot with animation
     chatbotWidget.addEventListener('click', () => {
@@ -748,6 +861,26 @@
       chatbotContainer.style.transition = 'all 0.3s ease-out'; // Re-enable transition
     });
 
+    function formatBotResponse(text) {
+      // Split into lines by "*"
+      const parts = text.split('*').map(part => part.trim()).filter(Boolean);
+
+      const formattedLines = parts.map(part => {
+        // Convert **bold** to <strong>
+        const withBold = part.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        return `<li>${withBold}</li>`;
+      });
+
+      return `<ul>${formattedLines.join('')}</ul>`;
+    }
+
+    if (video) {
+      video.addEventListener('timeupdate', () => {
+        if (video.duration > 0 && video.duration - video.currentTime <= 30 && !summarySent) {
+          sendSummaryRequest();
+        }
+      });
+    }
 
     // Handle Option Selection
     optionButtons.forEach(button => {
@@ -768,7 +901,7 @@
         }
         
         // Add user selection to chat
-        appendMessage(e.target.closest('button').innerHTML, 'user');
+        appendMessage(e.target.closest('button').textContent.trim(), 'user');
         
         // Show typing indicator
         const typingIndicator = appendThinking();
@@ -776,6 +909,9 @@
         // Get current timestamp
         const timeSec = video ? Math.floor(video.currentTime) : 0;
         
+        if (!collectedTimestamps.includes(timeSec)) {
+          collectedTimestamps.push(timeSec);
+        }
         // Send request to backend
         try {
           const response = await fetch('http://127.0.0.1:8000/items/', {
@@ -793,16 +929,36 @@
 
           removeThinking(typingIndicator);
           const botResponse = data["response_by_gemini"] || "No response from bot";
-          appendMessage(botResponse, 'bot');
+          const formattedResponse = formatBotResponse(botResponse);
+          appendMessage(formattedResponse, 'bot', true); 
           
-          // Speak the response if TTS is enabled
-          speakText(botResponse);
+           if (ttsToggle.checked && data.audio_base64) {
+            const audioData = atob(data.audio_base64);
+            const arrayBuffer = new Uint8Array(audioData.length);
+            for (let i = 0; i < audioData.length; i++) {
+              arrayBuffer[i] = audioData.charCodeAt(i);
+            }
+
+            const blob = new Blob([arrayBuffer], { type: 'audio/mpeg' });
+            const audioUrl = URL.createObjectURL(blob);
+            
+             currentAudio = new Audio(audioUrl);
+              currentAudio.play();
+              isSpeaking = true;
+              updatePlayPauseButton();
+
+              // Auto reset on end
+              currentAudio.onended = () => {
+                isSpeaking = false;
+                updatePlayPauseButton();
+              };
+          }
         } catch (err) {
           removeThinking(typingIndicator);
           const errorMessage = "Error contacting backend.";
           appendMessage(errorMessage, 'bot');
           console.error(err);
-          
+
           if (ttsToggle.checked) {
             speakText(errorMessage);
           }
@@ -816,9 +972,12 @@
     // Close when clicking outside
     document.addEventListener('click', (e) => {
       if (!chatbotContainer.contains(e.target) && !chatbotWidget.contains(e.target)) {
-        window.speechSynthesis.cancel();
+        if (currentAudio) {
+          currentAudio.pause();
+          currentAudio.currentTime = 0;
+        }
         isSpeaking = false;
-        currentUtterance = null;
+        currentAudio = null;
         updatePlayPauseButton();
         chatbotContainer.classList.remove('active');
         setTimeout(() => {
@@ -827,7 +986,6 @@
       }
     });
 
-    // Add slight delay to video load for demo purposes
     window.addEventListener('load', () => {
       setTimeout(() => {
         if (video) {
