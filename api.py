@@ -9,19 +9,23 @@ from langchain_qdrant import QdrantVectorStore, RetrievalMode
 from dotenv import load_dotenv
 from google.genai import types
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List
-from gtts import gTTS
+from typing import Dict, List
 from elevenlabs.client import ElevenLabs
-from elevenlabs import play
 import base64
 from fastapi.responses import JSONResponse
-import requests
-import xml.etree.ElementTree as ET
-import urllib.parse, urllib.request
 from typing import List
-import json
-import time
 import arxiv
+from pymongo import MongoClient
+import json
+import re
+
+MONGO_URI = "mongodb+srv://dbuser:dbuser2280@test.stzoarv.mongodb.net/"
+DB_NAME = "learning-buddy"
+COLLECTION_NAME = "test-1"
+
+client = MongoClient(MONGO_URI)
+db = client[DB_NAME]
+collection = db[COLLECTION_NAME]
 
 
 
@@ -55,6 +59,7 @@ elevenlabs = ElevenLabs(
 
 
 class Item(BaseModel):
+    id:str
     collection_name: str
     query_type: str
     time_stamp: float
@@ -141,20 +146,26 @@ def ask_query(item: Item):
             'response_by_gemini': "No context available to answer the query.",
         }
 
+    user_doc = collection.find_one({"id": item.id})
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    communication_preferences = user_doc.get("communication_preferences_summary", "No summary available.")
     if(item.query_type=="Explain the current concept in simpler terms"):
         print("simpler terms it is")
         response = llmclient.models.generate_content(
         model="gemini-2.0-flash",
-        contents=f"Here is the text from the moment where the student asked for easy summarization: {segment_text} and here is the relevant context from the lecture: {context_text}",
+        contents=f"Here is the text from the moment where the student asked for easy summarization: {segment_text} and here is the relevant context from the lecture: {context_text} ad here is the user profile {communication_preferences}",
         config=types.GenerateContentConfig(
             system_instruction=[
                     """
                         You are a concise and helpful doubt-solving assistant integrated with a video lecture platform.
                         Follow these system prompts strictly:
                         1. You have to summarize the given context in simpler words that the user can understand as it getting tough for user.
-                        2. You're given a text part where the student has asked doubt so keep in mind that the segment's theory should be there in your response.
-                        3. You're also provided with the relevant context from lecture so keep in mind the way you explain should be easier than that.
-                        4. Keep the explaination between 30-60 words.
+                        2. You will be provided user communication preferences, you must follow those preferences to customize your response tailored to user.
+                        3. You're given a text part where the student has asked doubt so keep in mind that the segment's theory should be there in your response.
+                        4. You're also provided with the relevant context from lecture so keep in mind the way you explain should be easier than that.
+                        5. Keep the explaination between 30-60 words.
                         6. Follow above given prompts strongly.
                     """
                 ]
@@ -165,7 +176,7 @@ def ask_query(item: Item):
         print("example given")
         response = llmclient.models.generate_content(
             model="gemini-2.0-flash",
-            contents=f"Here is the text from the moment where the student asked for examples: {segment_text} and here is the relevant context from the lecture for reference: {context_text}",
+            contents=f"Here is the text from the moment where the student asked for examples: {segment_text} and here is the relevant context from the lecture for reference: {context_text} Here are the communication preferences of user {communication_preferences}",
             config=types.GenerateContentConfig(
                 system_instruction=[
                     """
@@ -173,7 +184,7 @@ def ask_query(item: Item):
                         Follow these system prompts strictly:
                         1. You have to provide real-life examples to the user on the topic that is running in the lecture.
                         2. You're given a text part from the moment where the student has asked examples so keep in mind that the examples should relate to that topic.
-                        3. You're also provided with the relevant context from lecture so keep in mind the way you explain should be easier than that.
+                        3. You must respond according to the communication preferences of the user, that you will be provided with.
                         4. Keep the explaination between 30-60 words.
                         6. Follow above given prompts strongly.
                     """
@@ -182,30 +193,27 @@ def ask_query(item: Item):
         )
     
     else:
-        print("summary till now")
         response = llmclient.models.generate_content(
             model="gemini-2.0-flash",
-            contents=f"Here is the text transcript of the lecture required to summarize:{context_text}",
+            contents=f"Here is the text transcript of the lecture required to summarize:{context_text} and here is the user communication preferences profile : {communication_preferences}",
             config=types.GenerateContentConfig(
                 system_instruction=[
                     """
                         You are a concise and helpful doubt-solving assistant integrated with a video lecture platform.
                         Follow these system prompts strictly:
                         1. You have to provide a brief summary of what has happened in the lecture till now.
-                        2. You're given a text part from the moment where the student and also the previous context of the lecture.
-                        3. You're also provided with the relevant context from lecture so keep in mind the way you explain should be easier than that.
+                        2. You're given a text part from the moment where the learner and also the previous context of the lecture.
+                        3. You're also provided with the relevant context from lecture.
                         4. Keep the explaination between 40-60 words.
-                        5. Explain like you are daeling with a high-school child year old child.
-                        6. It would be better if you answer answer in points.
-                        7. use - for starting a new line for points and do not use any other special symbol.
-                        7. Follow above given prompts strongly.
+                        5. You are provided with the communication preferences of the user so you must maintain your response tone according user preferences.
+                        6. You must give answers only, without stating what type of tone you will use, you are answering a learner directly.
+                        7. It would be better if you answer in points.
+                        8. use - for starting a new line for points and do not use any other special symbol.
+                        9. Follow above given prompts strongly.
                     """
                 ]
             )
         )
-
-
-    print(f"Timestamp: {item.time_stamp}")
 
     if(item.tts_enabled==1):
         audio_bytes = elevenlabs.text_to_speech.convert(
@@ -231,10 +239,6 @@ def ask_query(item: Item):
 class PauseList(BaseModel):
     timestamps: List[float]
     collection_name: str
-
-import requests
-import xml.etree.ElementTree as ET
-import time
 
 @app.post("/pauses/")
 def create_pauses(item: PauseList):
@@ -274,7 +278,6 @@ def create_pauses(item: PauseList):
             
             doc = " ".join(doc.split())
             docs += doc + " "
-    
     
     docs = docs.strip()
 
@@ -333,15 +336,58 @@ def create_pauses(item: PauseList):
             'url':arxiv_links[int(response.text)],
         }
  
+class user(BaseModel):
+    id:str
+
+@app.post("/choices/")
+def choices(item:user):
+    user_doc = collection.find_one({"id": item.id})
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    user_summary = user_doc.get("academic_profile_summary", "No summary available.")
+
+    print(user_summary)
+
+    response = llmclient.models.generate_content(
+        contents=f"Here is the academic context summary based on which you have to suggest topics {user_summary}",
+        model="gemini-2.0-flash",
+        config=types.GenerateContentConfig(
+                system_instruction=[
+                    """
+                        Follow these system prompts strictly:
+                        1. You are provided with academic summary and by that you must assess user's knowledge base.
+                        2. Based on the users prerequisite you have to suggest a list of topics of AI on which problem statement can be made.
+                        3. Your topics must be relevant to the users current knowledge level, not easy and not hard.
+                        4. You must give at least 2 and at max 8 topics.
+                        5. You response must follow the exact pattern- "Topic1  Topic2  Topic3".
+                        6. The topics must be separated by a double space.
+                    """
+                ]
+        )
+    )
+
+    topics_list = response.text.strip().split("  ")
+
+    return {
+        'topics': topics_list
+    }
 
 class debate(BaseModel):
+    id:str
     topic:str
 
 
 @app.post("/debate-topic/")
 def topic(item:debate):
+    user_doc = collection.find_one({"id": item.id})
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    academic_profile = user_doc.get("academic_profile_summary", "No summary available.")
+    learning_profile = user_doc.get("learning_profile_summary", "No summary available.")
     response = llmclient.models.generate_content(
-        contents=f"here is the word on which you have to give the topic of debate : {item.topic}",
+        contents=f"here is the word on which you have to give the topic of debate : {item.topic}, here is the academic profile : {academic_profile}, here is the learning profile : {learning_profile}",
         model="gemini-2.0-flash",
         config=types.GenerateContentConfig(
                 system_instruction=[
@@ -349,7 +395,9 @@ def topic(item:debate):
                      You are a concise and helpful doubt-solving assistant integrated with a video lecture platform.
                         Follow these system prompts strictly:
                         1. You will be given a word and based on that you have to suggest a topic for debate.
-                        2. The debate will be taking place between the user and LLM.
+                        2. Your response must be like - "Deep Learning is really useful or hyped".
+                        3. The debate will be taking place between the user and LLM.
+                        4. You will be provided with the academic and learning profile of the user and you must use that for suggesting the problem statement.
                     """
                 ]
         )
@@ -359,10 +407,87 @@ def topic(item:debate):
         'topic':response.text
     }
 
+class DebateResponseRequest(BaseModel):
+    user_id:str
+    topic: str
+    user_position: str  
+    bot_position: str   
+    debate_history: List[Dict[str, str]]
+
+
+@app.post('/debate-response/')
+def debateresponse(item:DebateResponseRequest):
+    user_doc = collection.find_one({"id": item.user_id})
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    preferences = user_doc.get("communication_preferences_summary", "No summary available.")
+    academic = user_doc.get("academic_profile_summary", "No summary available.")
+    response = llmclient.models.generate_content(
+        contents=f"Here is the topic of discussion {item.topic},  here is the conversation history {item.debate_history}, user communication preferences {preferences}, and here is the academic profile user {academic}",
+        model="gemini-2.0-flash",
+        config=types.GenerateContentConfig(
+                system_instruction=[
+                    """
+                     You are engaged in a discussion with the user about a topic that is related to field artificial intelligence:
+                     1. You will be provided with the topic of debate and the academic profile and communication preferences of the user.
+                     2. You must form your responses tailored to communication preferences of the user in very detail and strict manner.
+                     3. You must keep in mind about the academic level of the user while making response.
+                     4. You must not use any bad words even if the user wants you to.
+                     5. You have to act like a person from the very first statement. Don't behave like an LLM.
+                     6. Keep Your responses limited to 40-50 words.
+                     7. You must be respectful.
+                     8. You must give response according to your stand not discuss.
+                     9. Your answers must be relevant to the topic of debate.
+                     10. If the users asks something else, you must remind him to stay on topic.
+                     11. If the users asks about any different thing you answer must be "Let's not get diverted"
+                    """
+                ]
+        )
+    )
+
+    return {
+        'response':response.text
+    }
 
 class counters(BaseModel):
     userresponse:str
     botresponse:str
+
+
+@app.post("/quiz-topics")
+async def get_quiz_topics(item: user):
+    user_doc = collection.find_one({"id": item.id})
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    user_summary = user_doc.get("academic_profile_summary", "No summary available.")
+
+    print(user_summary)
+
+    response = llmclient.models.generate_content(
+        contents=f"Here is the academic context summary based on which you have to suggest topics for quiz {user_summary}",
+        model="gemini-2.0-flash",
+        config=types.GenerateContentConfig(
+                system_instruction=[
+                    """
+                        Follow these system prompts strictly:
+                        1. You are provided with academic summary and by that you must assess user's knowledge base.
+                        2. Based on the users prerequisite you have to suggest a list of topics of AI on which the user can be quizzed.
+                        3. Your topics must be relevant to the users current knowledge level, not easy and not hard.
+                        4. You must give at least 2 and at max 8 topics.
+                        5. You response must follow the exact pattern- "Topic1  Topic2  Topic3".
+                        6. The topics must be separated by a double space.
+                    """
+                ]
+        )
+    )
+
+    topics_list = response.text.strip().split("  ")
+
+    return {
+        'topics': topics_list
+    }
 
 class Topic(BaseModel):
     topic:str
@@ -389,19 +514,13 @@ async def get_quiz_questions_flexible(item: Topic):
             model="gemini-2.0-flash"
         )
         
-        import json
-        import re
-        
-        # Try to extract JSON from response
         response_text = response.text.strip()
         
-        # Look for JSON array in the response
         json_match = re.search(r'\[.*\]', response_text, re.DOTALL)
         if json_match:
             json_str = json_match.group()
             questions_data = json.loads(json_str)
             
-            # Validate the structure
             valid_questions = []
             for q in questions_data:
                 if (isinstance(q, dict) and 
@@ -420,3 +539,124 @@ async def get_quiz_questions_flexible(item: Topic):
         raise HTTPException(status_code=400, detail=f"Invalid JSON in response: {e}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+
+class StudentRequest(BaseModel):
+    id: str
+
+
+@app.post("/summarize-profile-bucket/")
+async def summarize_student(data: StudentRequest):
+    student_doc = collection.find_one({"id":data.id})
+    if not student_doc:
+        raise HTTPException(status_code=404, detail="Student not found.")
+    learning_profile = student_doc.get("learning_profile")
+    if not learning_profile:
+        raise HTTPException(status_code=400, detail="Learning profile not found for this student.")
+    
+
+    try:
+        response = llmclient.models.generate_content(
+            contents=f"here is the data about the learning profile student you need to summarize {learning_profile}",
+            model="gemini-2.0-flash",
+            config=types.GenerateContentConfig(
+                    system_instruction=[
+                        """
+                        1. You will be provided with th learning profile of a user.
+                        2. You must summarize the profile of the user without losing any important information.
+                        3. Keep your summary of about 20-30 words.
+                        """
+                    ]
+            )
+        )
+        summary = response.text.strip()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"LLM error: {str(e)}")
+
+    # Step 3: Update the document
+    collection.update_one({"id": data.id}, {"$set": {"learning_profile_summary": summary}})
+
+    return {
+        'learning_profile_summary':summary
+    }
+
+
+@app.post("/summarize-preferences-bucket/")
+async def summarize_student(data: StudentRequest):
+    student_doc = collection.find_one({"id":data.id})
+    if not student_doc:
+        raise HTTPException(status_code=404, detail="Student not found.")
+    communication_preferences = student_doc.get("communication_preferences")
+    if not communication_preferences:
+        raise HTTPException(status_code=400, detail="Communication Preferences not found for this student.")
+    
+
+    try:
+        response = llmclient.models.generate_content(
+            contents=f"here is the data about the communication preferences student you need to summarize {communication_preferences}",
+            model="gemini-2.0-flash",
+            config=types.GenerateContentConfig(
+                    system_instruction=[
+                        """
+                        Follow these given prompts strictly:
+                        1. You will be provided with the information about the academic context of a user.
+                        2. You must summarize the profile of the user without losing any important information.
+                        3. Summarization must be effective so that tailored responses can be provided to the user.
+                        4. Keep your summary of about 30-40 words.
+                        """
+                    ]
+            )
+        )
+        summary = response.text.strip()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"LLM error: {str(e)}")
+
+    # Step 3: Update the document
+    collection.update_one({"id": data.id}, {"$set": {"communication_preferences_summary": summary}})
+
+    return {
+        'communication_preferences_summary':summary
+    }
+
+
+@app.post("/summarize-academic-bucket/")
+async def summarize_student(data: StudentRequest):
+    student_doc = collection.find_one({"id": data.id})
+    if not student_doc:
+        raise HTTPException(status_code=404, detail="Student not found.")
+
+    print("Student Document:", student_doc)
+
+    academic_context = student_doc.get("academic_context")
+    if not academic_context:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Academic context not found. Available keys: {list(student_doc.keys())}"
+        )
+
+    try:
+        response = llmclient.models.generate_content(
+            contents=f"Here is the academic context of a student: {academic_context}",
+            model="gemini-2.0-flash",
+            config=types.GenerateContentConfig(
+                system_instruction=[
+                    """
+                    Follow these given prompts strictly:
+                    1. You will be provided with the academic context of a user.
+                    2. You must summarize it without losing key information.
+                    3. Must focus on what user has covered till now.
+                    3. Keep the summary around 30-40 words.
+                    """
+                ]
+            )
+        )
+        summary = response.text.strip()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"LLM error: {str(e)}")
+
+    collection.update_one({"id": data.id}, {"$set": {"academic_profile_summary": summary}})
+
+    return {
+        'academic_context_summary': summary
+    }

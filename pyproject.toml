@@ -19,8 +19,11 @@ dependencies = [
     "langchain-qdrant>=0.2.0",
     "numpy>=2.2.6",
     "openai>=1.84.0",
+    "pymongo>=4.13.2",
+    "pymysql>=1.1.1",
     "python-dotenv>=1.1.0",
     "scholarly>=1.7.11",
+    "sqlalchemy>=2.0.41",
     "urlquote>=2.1.0",
     "whisperx>=3.3.4",
 ]

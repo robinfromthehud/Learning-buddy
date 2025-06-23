@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Quiz App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ff9a56, #ffd89b, #ff8a00);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 90%;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #e67e22;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .user-input {
+            margin-bottom: 30px;
+        }
+
+        .user-input input {
+            width: 100%;
+            max-width: 300px;
+            padding: 15px 20px;
+            border: 2px solid #ff8a00;
+            border-radius: 25px;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .user-input input:focus {
+            border-color: #e67e22;
+            box-shadow: 0 0 15px rgba(230, 126, 34, 0.3);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #ff8a00, #e67e22);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .topics-container {
+            display: none;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .topic-bubble {
+            background: linear-gradient(135deg, #ff9a56, #ff8a00);
+            color: white;
+            padding: 20px 25px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            font-size: 1rem;
+            font-weight: 500;
+            box-shadow: 0 5px 15px rgba(255, 138, 0, 0.3);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .topic-bubble:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 10px 25px rgba(255, 138, 0, 0.4);
+        }
+
+        .topic-bubble:nth-child(odd) {
+            animation-delay: -1.5s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .quiz-container {
+            display: none;
+        }
+
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+            border-radius: 15px;
+        }
+
+        .timer {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #e67e22;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .score {
+            font-size: 1.2rem;
+            color: #e67e22;
+            font-weight: bold;
+        }
+
+        .question-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .question {
+            font-size: 1.3rem;
+            color: #333;
+            margin-bottom: 25px;
+            font-weight: 500;
+        }
+
+        .options {
+            display: grid;
+            gap: 15px;
+        }
+
+        .option {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            padding: 15px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .option:hover {
+            background: #fff3e0;
+            border-color: #ff8a00;
+        }
+
+        .option.selected {
+            background: linear-gradient(135deg, #ff9a56, #ff8a00);
+            color: white;
+            border-color: #e67e22;
+        }
+
+        .next-btn {
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .results {
+            display: none;
+            text-align: center;
+        }
+
+        .results h2 {
+            color: #e67e22;
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+
+        .final-score {
+            font-size: 3rem;
+            color: #ff8a00;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #ff8a00;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff8a00, #e67e22);
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Initial Screen -->
+        <div id="initial-screen">
+            <div class="header">
+                <h1>🧠 AI Quiz Challenge</h1>
+                <p>Test your knowledge with personalized AI quizzes</p>
+            </div>
+            <div class="user-input">
+                <input type="text" id="userId" placeholder="Enter your User ID" required>
+                <br><br>
+                <button class="btn" onclick="fetchTopics()">Start Quiz</button>
+            </div>
+        </div>
+
+        <!-- Loading Screen -->
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Loading your personalized topics...</p>
+        </div>
+
+        <!-- Topics Selection -->
+        <div id="topics-screen">
+            <div class="header">
+                <h2>Choose Your Quiz Topic</h2>
+                <p>Select a topic that interests you</p>
+            </div>
+            <div id="topics-container" class="topics-container"></div>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quiz-screen" class="quiz-container">
+            <div class="quiz-header">
+                <div class="score">Score: <span id="score">0</span>/<span id="total">7</span></div>
+                <div class="timer" id="timer">01:00</div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress"></div>
+            </div>
+            <div class="question-card">
+                <div class="question" id="question"></div>
+                <div class="options" id="options"></div>
+                <button class="btn next-btn" id="next-btn" onclick="nextQuestion()">Next Question</button>
+            </div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="results-screen" class="results">
+            <h2>🎉 Quiz Complete!</h2>
+            <div class="final-score" id="final-score">0/7</div>
+            <p id="result-message"></p>
+            <button class="btn" onclick="restartQuiz()">Take Another Quiz</button>
+        </div>
+    </div>
+
+    <script>
+        let currentQuestions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let selectedAnswer = null;
+        let timer;
+        let timeLeft = 60;
+
+        const API_BASE = 'http://localhost:8000'; // Update with your API base URL
+
+        async function fetchTopics() {
+            const userId = document.getElementById('userId').value.trim();
+            if (!userId) {
+                alert('Please enter your User ID');
+                return;
+            }
+
+            showScreen('loading');
+
+            try {
+                const response = await fetch(`${API_BASE}/quiz-topics`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ id: userId })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch topics');
+                }
+
+                const data = await response.json();
+                displayTopics(data.topics);
+                showScreen('topics-screen');
+            } catch (error) {
+                console.error('Error fetching topics:', error);
+                alert('Error fetching topics. Please try again.');
+                showScreen('initial-screen');
+            }
+        }
+
+        function displayTopics(topics) {
+            const container = document.getElementById('topics-container');
+            container.innerHTML = '';
+            
+            topics.forEach(topic => {
+                const bubble = document.createElement('button');
+                bubble.className = 'topic-bubble';
+                bubble.textContent = topic.trim();
+                bubble.onclick = () => startQuiz(topic.trim());
+                container.appendChild(bubble);
+            });
+            
+            container.style.display = 'flex';
+        }
+
+        async function startQuiz(topic) {
+            showScreen('loading');
+
+            try {
+                const response = await fetch(`${API_BASE}/quiz/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ topic: topic })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch questions');
+                }
+
+                const data = await response.json();
+                currentQuestions = data.questions;
+                currentQuestionIndex = 0;
+                score = 0;
+                selectedAnswer = null;
+                timeLeft = 60;
+
+                showScreen('quiz-screen');
+                startTimer();
+                displayQuestion();
+            } catch (error) {
+                console.error('Error fetching questions:', error);
+                alert('Error fetching questions. Please try again.');
+                showScreen('topics-screen');
+            }
+        }
+
+        function displayQuestion() {
+            if (currentQuestionIndex >= currentQuestions.length) {
+                endQuiz();
+                return;
+            }
+
+            const question = currentQuestions[currentQuestionIndex];
+            document.getElementById('question').textContent = question.question;
+            document.getElementById('score').textContent = score;
+            
+            const optionsContainer = document.getElementById('options');
+            optionsContainer.innerHTML = '';
+            
+            question.options.forEach((option, index) => {
+                const optionElement = document.createElement('div');
+                optionElement.className = 'option';
+                optionElement.textContent = option;
+                optionElement.onclick = () => selectOption(index, optionElement);
+                optionsContainer.appendChild(optionElement);
+            });
+
+            updateProgress();
+            selectedAnswer = null;
+            document.getElementById('next-btn').style.opacity = '0.5';
+        }
+
+        function selectOption(index, element) {
+            // Remove previous selections
+            document.querySelectorAll('.option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            
+            // Select current option
+            element.classList.add('selected');
+            selectedAnswer = index;
+            document.getElementById('next-btn').style.opacity = '1';
+        }
+
+        function nextQuestion() {
+            if (selectedAnswer === null) {
+                alert('Please select an answer');
+                return;
+            }
+
+            const currentQuestion = currentQuestions[currentQuestionIndex];
+            if (selectedAnswer === currentQuestion.correctAnswer) {
+                score++;
+            }
+
+            currentQuestionIndex++;
+            displayQuestion();
+        }
+
+        function startTimer() {
+            timer = setInterval(() => {
+                timeLeft--;
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                document.getElementById('timer').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+                if (timeLeft <= 0) {
+                    endQuiz();
+                }
+            }, 1000);
+        }
+
+        function endQuiz() {
+            clearInterval(timer);
+            
+            const percentage = Math.round((score / currentQuestions.length) * 100);
+            document.getElementById('final-score').textContent = `${score}/${currentQuestions.length}`;
+            
+            let message = '';
+            if (percentage >= 80) {
+                message = '🌟 Excellent! You really know your stuff!';
+            } else if (percentage >= 60) {
+                message = '👍 Good job! Keep learning and improving!';
+            } else if (percentage >= 40) {
+                message = '📚 Not bad! There\'s room for improvement.';
+            } else {
+                message = '💪 Keep studying! You\'ll do better next time!';
+            }
+            
+            document.getElementById('result-message').textContent = message;
+            showScreen('results-screen');
+        }
+
+        function updateProgress() {
+            const progress = ((currentQuestionIndex + 1) / currentQuestions.length) * 100;
+            document.getElementById('progress').style.width = progress + '%';
+        }
+
+        function showScreen(screenId) {
+            const screens = ['initial-screen', 'loading', 'topics-screen', 'quiz-screen', 'results-screen'];
+            screens.forEach(screen => {
+                document.getElementById(screen).style.display = 'none';
+            });
+            document.getElementById(screenId).style.display = 'block';
+        }
+
+        function restartQuiz() {
+            clearInterval(timer);
+            showScreen('initial-screen');
+            document.getElementById('userId').value = '';
+        }
+
+        // Handle Enter key in user input
+        document.getElementById('userId').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                fetchTopics();
+            }
+        });
+    </script>
+</body>
+</html>
