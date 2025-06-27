@@ -277,6 +277,66 @@
             background: rgba(255,255,255,0.3);
         }
 
+        .user-id-modal {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .user-id-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .user-id-container h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .user-id-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .user-id-input:focus {
+            border-color: #667eea;
+        }
+
+        .submit-btn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #db9915 0%, #ec8507 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
         @keyframes fadeInDown {
             from {
                 opacity: 0;
@@ -350,7 +410,16 @@
     </style>
 </head>
 <body>
-    <div class="container" id="mainContainer">
+    <div class="user-id-modal" id="userIdModal">
+        <div class="user-id-container">
+            <h2>Welcome to AI Debate Platform</h2>
+            <p>Please enter your user ID to continue:</p>
+            <input type="text" class="user-id-input" id="userIdInput" placeholder="Enter your user ID">
+            <button class="submit-btn" onclick="submitUserId()">Submit</button>
+        </div>
+    </div>
+
+    <div class="container" id="mainContainer" style="display: none;">
         <div class="header">
             <h1>AI Debate Platform</h1>
             <p>Choose a topic and engage in an intelligent debate</p>
@@ -384,9 +453,8 @@
     </div>
 
     <script>
-       
         const API_BASE_URL = 'http://127.0.0.1:8000';
-        const USER_ID = 'DK2025';
+        let USER_ID = '';
         
         let currentTopic = '';
         let currentDebateTopic = '';
@@ -397,8 +465,27 @@
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
-            loadTopics();
+            // Show the user ID modal first
+            document.getElementById('userIdModal').style.display = 'flex';
+            document.getElementById('mainContainer').style.display = 'none';
         });
+
+        // Handle user ID submission
+        function submitUserId() {
+            const userIdInput = document.getElementById('userIdInput').value.trim();
+            
+            if (!userIdInput) {
+                alert('Please enter a valid user ID');
+                return;
+            }
+            
+            USER_ID = userIdInput;
+            document.getElementById('userIdModal').style.display = 'none';
+            document.getElementById('mainContainer').style.display = 'block';
+            
+            // Now load topics with the user ID
+            loadTopics();
+        }
 
         // Load topics from API
         async function loadTopics() {
@@ -532,8 +619,8 @@
                 debateHistory.push({ speaker: 'bot', message: data.response });
                 
                 // Keep only last 4 messages (2 exchanges)
-                if (debateHistory.length > 4) {
-                    debateHistory = debateHistory.slice(-4);
+                if (debateHistory.length > 6) {
+                    debateHistory = debateHistory.slice(-6);
                 }
                 
             } catch (error) {

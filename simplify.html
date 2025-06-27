@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Text Bot Assistant</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: #f5f7fa;
+    }
+
+    h1 {
+      text-align: center;
+      color: #1e88e5;
+    }
+
+    #text-container {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      margin: auto;
+      border: 1px solid #ccc;
+      background: white;
+      padding: 20px;
+      min-height: 200px;
+      line-height: 1.6;
+      font-size: 16px;
+      color: #333;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      user-select: text;
+      cursor: text;
+    }
+
+    .popup {
+      position: fixed;
+      background: #ffffff;
+      border: 1px solid #ccc;
+      border-left: 4px solid #1e88e5;
+      padding: 10px 14px;
+      border-radius: 8px;
+      z-index: 1000;
+      display: none;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      max-width: 300px;
+      min-width: 200px;
+    }
+
+    .popup button {
+      background: #1e88e5;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      width: 100%;
+    }
+
+    .popup button:hover {
+      background: #1565c0;
+    }
+
+    .popup-content {
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #eee;
+      display: none;
+    }
+
+    .popup-content.show {
+      display: block;
+    }
+
+    .explanation-overlay {
+      position: absolute;
+      background: #e3f2fd;
+      border: 2px solid #1e88e5;
+      border-radius: 8px;
+      padding: 12px;
+      margin: 10px 0;
+      box-shadow: 0 2px 8px rgba(30, 136, 229, 0.2);
+      z-index: 100;
+      max-width: 400px;
+      font-size: 14px;
+      line-height: 1.4;
+      color: #0d47a1;
+    }
+
+    .explanation-overlay .close-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: #1e88e5;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      font-size: 12px;
+      line-height: 1;
+    }
+
+    .explanation-overlay .close-btn:hover {
+      background: #1565c0;
+    }
+
+    .explanation-header {
+      font-weight: bold;
+      color: #1e88e5;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+
+    #text-container ::selection {
+      background: rgba(30, 136, 229, 0.3);
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+    }
+
+    .error {
+      background: #ffebee;
+      color: #c62828;
+      padding: 16px;
+      border-left: 4px solid #c62828;
+      margin: 20px auto;
+      max-width: 800px;
+      border-radius: 4px;
+    }
+
+    .text-loaded {
+      animation: fadeIn 0.5s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    #loginPopup {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+
+    #loginPopup div {
+      background: white;
+      padding: 30px 40px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    #switch-user-btn {
+      padding: 6px 12px;
+      font-size: 12px;
+      background: #f44336;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    #switch-user-btn:hover {
+      background: #d32f2f;
+    }
+  </style>
+</head>
+<body>
+  <h1>📄 Text Assistant</h1>
+  <div style="text-align: right; margin: -30px 20px 20px auto; max-width: 800px;">
+    <button id="switch-user-btn" onclick="switchUser()">🔄 Switch User</button>
+  </div>
+
+  <div id="text-container">
+    <div class="loading" id="loading" style="display: none;">Loading text...</div>
+  </div>
+
+  <div class="popup" id="popup">
+    <button onclick="handleSimplify()">💡 Know More</button>
+    <div class="popup-content" id="popup-content">
+      <div id="popup-loading" style="display: none; text-align: center; color: #666;">
+        Analyzing...
+      </div>
+    </div>
+  </div>
+
+  <!-- Login Popup -->
+  <div id="loginPopup">
+    <div>
+      <h2>Welcome 👋</h2>
+      <p>Select your learner profile:</p>
+      <select id="userSelectLogin" style="padding:8px 12px; font-size:16px;">
+        <option value="user_004">Alex Chen</option>
+        <option value="user_007">Dr. Rachel kim</option>
+      </select>
+      <br/><br/>
+      <button onclick="confirmUser()" style="padding:10px 20px; background:#1e88e5; color:white; border:none; border-radius:6px; font-size:14px; cursor:pointer;">Continue</button>
+    </div>
+  </div>
+
+  <script>
+    const container = document.getElementById("text-container");
+    const popup = document.getElementById("popup");
+    const loading = document.getElementById("loading");
+    let selectedText = "";
+    let currentRange = null;
+
+    function confirmUser() {
+      const selectedUser = document.getElementById("userSelectLogin").value;
+      localStorage.setItem("user_id", selectedUser);
+      document.getElementById("loginPopup").style.display = "none";
+    }
+
+    function switchUser() {
+      localStorage.removeItem("user_id");
+      document.getElementById("loginPopup").style.display = "flex";
+    }
+
+    function getUserId() {
+      return localStorage.getItem("user_id");
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const savedUserId = getUserId();
+      if (!savedUserId) {
+        document.getElementById("loginPopup").style.display = "flex";
+      } else {
+        document.getElementById("loginPopup").style.display = "none";
+      }
+
+      loadTextFile();
+    });
+
+    async function loadTextFile() {
+      try {
+        loading.style.display = "block";
+        container.innerHTML = "";
+        container.appendChild(loading);
+
+        const response = await fetch("docc.txt");
+        if (!response.ok) throw new Error(`Failed to load text file: ${response.status}`);
+        
+        const textContent = await response.text();
+        container.innerHTML = "";
+        container.textContent = textContent;
+        container.classList.add("text-loaded");
+        loading.style.display = "none";
+      } catch (error) {
+        console.error("Error loading text file:", error);
+        showError("Error loading text file: " + error.message);
+        loading.style.display = "none";
+      }
+    }
+
+    document.addEventListener("mouseup", () => {
+      setTimeout(() => {
+        const selection = window.getSelection();
+        const selectedText = selection.toString().trim();
+
+        if (selectedText.length > 3) {
+          window.selectedText = selectedText;
+          currentRange = selection.getRangeAt(0).cloneRange();
+          const rect = currentRange.getBoundingClientRect();
+          const x = Math.min(rect.right + 10, window.innerWidth - 320);
+          const y = Math.max(rect.top - 10, 10);
+          popup.style.left = x + "px";
+          popup.style.top = y + "px";
+          popup.style.display = "block";
+          const popupContent = document.getElementById("popup-content");
+          popupContent.classList.remove("show");
+          document.getElementById("popup-loading").style.display = "none";
+        } else {
+          popup.style.display = "none";
+        }
+      }, 10);
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!popup.contains(e.target) && !container.contains(e.target)) {
+        popup.style.display = "none";
+      }
+    });
+
+    function createExplanationOverlay(explanation, range) {
+      container.querySelectorAll('.explanation-overlay').forEach(e => e.remove());
+      const overlay = document.createElement('div');
+      overlay.className = 'explanation-overlay';
+      const selectedTextPreview = window.selectedText.substring(0, 50) + (window.selectedText.length > 50 ? '...' : '');
+      overlay.innerHTML = `
+        <button class="close-btn" onclick="this.parentElement.remove()">×</button>
+        <div class="explanation-header">Selected: "${selectedTextPreview}"</div>
+        <div>${explanation}</div>
+      `;
+      const rect = range.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      const relativeTop = rect.top - containerRect.top + container.scrollTop;
+      overlay.style.top = Math.max(0, relativeTop - 10) + 'px';
+      overlay.style.left = '10px';
+      overlay.style.right = '10px';
+      container.style.position = 'relative';
+      container.appendChild(overlay);
+      overlay.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    async function handleSimplify() {
+      const selectedText = window.selectedText;
+      const popupContent = document.getElementById("popup-content");
+      const popupLoading = document.getElementById("popup-loading");
+      const userId = getUserId();
+
+      if (!userId) return showError("No user selected. Please refresh and select a profile.");
+      if (!selectedText || !currentRange) return showError("No text selected");
+
+      popupContent.classList.add("show");
+      popupLoading.style.display = "block";
+      setTimeout(() => { popup.style.display = "none"; }, 500);
+
+      try {
+        const res = await fetch(`http://127.0.0.1:8000/simplify/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: selectedText, id:userId}),
+        });
+
+        if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+        const data = await res.json();
+        popupLoading.style.display = "none";
+        popupContent.classList.remove("show");
+        createExplanationOverlay(data.simplified || "No explanation available", currentRange);
+      } catch (err) {
+        console.error("Backend error:", err);
+        popupLoading.style.display = "none";
+        popupContent.classList.remove("show");
+        createExplanationOverlay(`
+          <strong style="color: #c62828;">Backend unavailable.</strong><br>
+          Make sure your server is running on http://localhost:8000
+        `, currentRange);
+      }
+    }
+
+    function showError(message) {
+      const errorDiv = document.createElement("div");
+      errorDiv.className = "error";
+      errorDiv.textContent = message;
+      document.body.insertBefore(errorDiv, container);
+      setTimeout(() => { if (errorDiv.parentNode) errorDiv.remove(); }, 5000);
+    }
+  </script>
+</body>
+</html>
