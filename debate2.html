@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Debate Platform</title>
-    <style>
-        * {
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Debate Platform</title>
+  <style>
+    * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -277,66 +277,6 @@
             background: rgba(255,255,255,0.3);
         }
 
-        .user-id-modal {
-            display: flex;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.7);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .user-id-container {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            width: 90%;
-            max-width: 500px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            animation: fadeIn 0.5s ease-out;
-        }
-
-        .user-id-container h2 {
-            color: #333;
-            margin-bottom: 20px;
-        }
-
-        .user-id-input {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #ddd;
-            border-radius: 25px;
-            font-size: 1rem;
-            margin-bottom: 20px;
-            outline: none;
-            transition: border-color 0.3s ease;
-        }
-
-        .user-id-input:focus {
-            border-color: #667eea;
-        }
-
-        .submit-btn {
-            padding: 15px 30px;
-            background: linear-gradient(135deg, #db9915 0%, #ec8507 100%);
-            color: white;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-
-        .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-
         @keyframes fadeInDown {
             from {
                 opacity: 0;
@@ -407,293 +347,254 @@
                 font-size: 2rem;
             }
         }
-    </style>
+
+    #endDebateBtn {
+      background: linear-gradient(135deg, #4a148c, #6a1b9a);
+      color: white;
+    }
+
+    #endDebateBtn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+  </style>
 </head>
 <body>
-    <div class="user-id-modal" id="userIdModal">
-        <div class="user-id-container">
-            <h2>Welcome to AI Debate Platform</h2>
-            <p>Please enter your user ID to continue:</p>
-            <input type="text" class="user-id-input" id="userIdInput" placeholder="Enter your user ID">
-            <button class="submit-btn" onclick="submitUserId()">Submit</button>
-        </div>
+  <div class="container" id="mainContainer">
+    <div class="header">
+      <h1>AI Debate Platform</h1>
+      <p>Choose a topic and engage in an intelligent debate</p>
     </div>
-
-    <div class="container" id="mainContainer" style="display: none;">
-        <div class="header">
-            <h1>AI Debate Platform</h1>
-            <p>Choose a topic and engage in an intelligent debate</p>
-        </div>
-        
-        <div class="topics-grid" id="topicsGrid">
-            <!-- Topics will be loaded here -->
-        </div>
-        
-        <div class="position-selection" id="positionSelection">
-            <h2 id="debateTopicTitle">Loading debate topic...</h2>
-            <p id="debateTopicDescription"></p>
-            <div class="position-buttons">
-                <button class="position-btn favor" onclick="selectPosition('favor')">In Favor</button>
-                <button class="position-btn against" onclick="selectPosition('against')">Against</button>
-            </div>
-        </div>
+    
+    <div class="topics-grid" id="topicsGrid"></div>
+    
+    <div class="position-selection" id="positionSelection">
+      <h2 id="debateTopicTitle">Loading debate topic...</h2>
+      <p id="debateTopicDescription"></p>
+      <div class="position-buttons">
+        <button class="position-btn favor" onclick="selectPosition('favor')">In Favor</button>
+        <button class="position-btn against" onclick="selectPosition('against')">Against</button>
+      </div>
     </div>
+  </div>
 
-    <div class="chat-container" id="chatContainer">
-        <div class="chat-header">
-            <button class="back-btn" onclick="goBack()">← Back</button>
-            <h2 id="chatTopicTitle">Debate Topic</h2>
-            <p id="chatUserPosition"></p>
-        </div>
-        <div class="chat-messages" id="chatMessages"></div>
-        <div class="chat-input-container">
-            <input type="text" class="chat-input" id="chatInput" placeholder="Type your argument..." onkeypress="handleKeyPress(event)">
-            <button class="send-btn" id="sendBtn" onclick="sendMessage()">Send</button>
-        </div>
+  <div class="chat-container" id="chatContainer">
+    <div class="chat-header">
+      <button class="back-btn" onclick="goBack()">← Back</button>
+      <h2 id="chatTopicTitle">Debate Topic</h2>
+      <p id="chatUserPosition"></p>
     </div>
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="chat-input-container">
+      <input type="text" class="chat-input" id="chatInput" placeholder="Type your argument..." onkeypress="handleKeyPress(event)">
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">Send</button>
+      <button class="send-btn" id="endDebateBtn" onclick="endDebate()">End Debate</button>
+    </div>
+  </div>
 
-    <script>
-        const API_BASE_URL = 'http://127.0.0.1:8000';
-        let USER_ID = '';
-        
-        let currentTopic = '';
-        let currentDebateTopic = '';
-        let userPosition = '';
-        let botPosition = '';
-        let debateHistory = [];
-        let isLoading = false;
+  <script>
+    const API_BASE_URL = 'http://127.0.0.1:8000';
+    const USER_ID = 'user_004';
 
-        // Initialize the application
-        document.addEventListener('DOMContentLoaded', function() {
-            // Show the user ID modal first
-            document.getElementById('userIdModal').style.display = 'flex';
-            document.getElementById('mainContainer').style.display = 'none';
+    let currentTopic = '';
+    let currentDebateTopic = '';
+    let userPosition = '';
+    let botPosition = '';
+    let debateHistory = [];
+    let isLoading = false;
+
+    document.addEventListener('DOMContentLoaded', function() {
+      loadTopics();
+    });
+
+    async function loadTopics() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/choices/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: USER_ID })
         });
 
-        // Handle user ID submission
-        function submitUserId() {
-            const userIdInput = document.getElementById('userIdInput').value.trim();
-            
-            if (!userIdInput) {
-                alert('Please enter a valid user ID');
-                return;
-            }
-            
-            USER_ID = userIdInput;
-            document.getElementById('userIdModal').style.display = 'none';
-            document.getElementById('mainContainer').style.display = 'block';
-            
-            // Now load topics with the user ID
-            loadTopics();
-        }
+        if (!response.ok) throw new Error('Failed to load topics');
+        const data = await response.json();
+        displayTopics(data.topics);
+      } catch (error) {
+        showError('Failed to load topics. Please try again.');
+      }
+    }
 
-        // Load topics from API
-        async function loadTopics() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/choices/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ id: USER_ID })
-                });
+    function displayTopics(topics) {
+      const topicsGrid = document.getElementById('topicsGrid');
+      topicsGrid.innerHTML = '';
+      topics.forEach((topic) => {
+        const card = document.createElement('div');
+        card.className = 'topic-card';
+        card.innerHTML = `<h3>${topic}</h3><p>Click to start a debate on ${topic}</p>`;
+        card.onclick = () => selectTopic(topic);
+        topicsGrid.appendChild(card);
+      });
+    }
 
-                if (!response.ok) {
-                    throw new Error('Failed to load topics');
-                }
+    async function selectTopic(topic) {
+      currentTopic = topic;
+      try {
+        const response = await fetch(`${API_BASE_URL}/debate-topic/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ topic: topic, id: USER_ID })
+        });
 
-                const data = await response.json();
-                displayTopics(data.topics);
-            } catch (error) {
-                console.error('Error loading topics:', error);
-                showError('Failed to load topics. Please try again.');
-            }
-        }
+        if (!response.ok) throw new Error('Failed to get debate topic');
+        const data = await response.json();
+        currentDebateTopic = data.topic;
+        showPositionSelection(data.topic);
+      } catch (error) {
+        showError('Failed to load debate topic. Please try again.');
+      }
+    }
 
-        // Display topics as cards
-        function displayTopics(topics) {
-            const topicsGrid = document.getElementById('topicsGrid');
-            topicsGrid.innerHTML = '';
+    function showPositionSelection(debateTopic) {
+      document.getElementById('debateTopicTitle').textContent = debateTopic;
+      document.getElementById('debateTopicDescription').textContent = 'Choose your position:';
+      document.getElementById('positionSelection').style.display = 'block';
+      document.getElementById('topicsGrid').style.display = 'none';
+    }
 
-            topics.forEach((topic, index) => {
-                const card = document.createElement('div');
-                card.className = 'topic-card';
-                card.innerHTML = `
-                    <h3>${topic}</h3>
-                    <p>Click to start a debate on ${topic}</p>
-                `;
-                card.onclick = () => selectTopic(topic);
-                topicsGrid.appendChild(card);
-            });
-        }
+    function selectPosition(position) {
+      userPosition = position;
+      botPosition = position === 'favor' ? 'against' : 'favor';
+      startDebate();
+    }
 
-        // Handle topic selection
-        async function selectTopic(topic) {
-            currentTopic = topic;
-            
-            try {
-                const response = await fetch(`${API_BASE_URL}/debate-topic/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ topic: topic, id: USER_ID })
-                });
+    async function startDebate() {
+      document.getElementById('mainContainer').style.display = 'none';
+      document.getElementById('chatContainer').style.display = 'flex';
 
-                if (!response.ok) {
-                    throw new Error('Failed to get debate topic');
-                }
+      document.getElementById('chatTopicTitle').textContent = currentDebateTopic;
+      document.getElementById('chatUserPosition').textContent = `You are ${userPosition} • AI is ${botPosition}`;
+      document.getElementById('chatMessages').innerHTML = '';
+      debateHistory = [];
 
-                const data = await response.json();
-                currentDebateTopic = data.topic;
-                showPositionSelection(data.topic);
-            } catch (error) {
-                console.error('Error getting debate topic:', error);
-                showError('Failed to load debate topic. Please try again.');
-            }
-        }
+      await getBotResponse();
+    }
 
-        // Show position selection
-        function showPositionSelection(debateTopic) {
-            document.getElementById('debateTopicTitle').textContent = debateTopic;
-            document.getElementById('debateTopicDescription').textContent = 'Choose your position:';
-            document.getElementById('positionSelection').style.display = 'block';
-            document.getElementById('topicsGrid').style.display = 'none';
-        }
+    async function getBotResponse() {
+      if (isLoading) return;
+      isLoading = true;
 
-        // Handle position selection
-        function selectPosition(position) {
-            userPosition = position;
-            botPosition = position === 'favor' ? 'against' : 'favor';
-            startDebate();
-        }
+      const sendBtn = document.getElementById('sendBtn');
+      sendBtn.innerHTML = '<div class="loading"></div>';
+      sendBtn.disabled = true;
 
-        // Start the debate chat
-        async function startDebate() {
-            document.getElementById('mainContainer').style.display = 'none';
-            document.getElementById('chatContainer').style.display = 'flex';
-            
-            document.getElementById('chatTopicTitle').textContent = currentDebateTopic;
-            document.getElementById('chatUserPosition').textContent = `You are ${userPosition} • AI is ${botPosition}`;
-            
-            // Clear previous messages
-            document.getElementById('chatMessages').innerHTML = '';
-            debateHistory = [];
-            
-            // Get initial response from bot
-            await getBotResponse();
-        }
+      try {
+        const response = await fetch(`${API_BASE_URL}/debate-response/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: USER_ID,
+            topic: currentDebateTopic,
+            user_position: userPosition,
+            bot_position: botPosition,
+            debate_history: debateHistory
+          })
+        });
 
-        // Get response from bot
-        async function getBotResponse() {
-            if (isLoading) return;
-            
-            isLoading = true;
-            const sendBtn = document.getElementById('sendBtn');
-            sendBtn.innerHTML = '<div class="loading"></div>';
-            sendBtn.disabled = true;
+        if (!response.ok) throw new Error('Failed to get bot response');
+        const data = await response.json();
+        addMessage(data.response, 'bot');
+        debateHistory.push({ speaker: 'bot', message: data.response });
+        if (debateHistory.length > 4) debateHistory = debateHistory.slice(-4);
+      } catch (error) {
+        addMessage('Sorry, I encountered an error. Please try again.', 'bot');
+      } finally {
+        isLoading = false;
+        sendBtn.innerHTML = 'Send';
+        sendBtn.disabled = false;
+      }
+    }
 
-            try {
-                const response = await fetch(`${API_BASE_URL}/debate-response`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        user_id: USER_ID,
-                        topic: currentDebateTopic,
-                        user_position: userPosition,
-                        bot_position: botPosition,
-                        debate_history: debateHistory
-                    })
-                });
+    async function sendMessage() {
+      const input = document.getElementById('chatInput');
+      const message = input.value.trim();
+      if (!message || isLoading) return;
 
-                if (!response.ok) {
-                    throw new Error('Failed to get bot response');
-                }
+      addMessage(message, 'user');
+      input.value = '';
 
-                const data = await response.json();
-                addMessage(data.response, 'bot');
-                
-                // Add to debate history
-                debateHistory.push({ speaker: 'bot', message: data.response });
-                
-                // Keep only last 4 messages (2 exchanges)
-                if (debateHistory.length > 6) {
-                    debateHistory = debateHistory.slice(-6);
-                }
-                
-            } catch (error) {
-                console.error('Error getting bot response:', error);
-                addMessage('Sorry, I encountered an error. Please try again.', 'bot');
-            } finally {
-                isLoading = false;
-                sendBtn.innerHTML = 'Send';
-                sendBtn.disabled = false;
-            }
-        }
+      debateHistory.push({ speaker: 'user', message: message });
+      if (debateHistory.length > 4) debateHistory = debateHistory.slice(-4);
+      await getBotResponse();
+    }
 
-        // Send user message
-        async function sendMessage() {
-            const input = document.getElementById('chatInput');
-            const message = input.value.trim();
-            
-            if (!message || isLoading) return;
+    function addMessage(message, sender) {
+      const messagesContainer = document.getElementById('chatMessages');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${sender}`;
+      messageDiv.textContent = message;
+      messagesContainer.appendChild(messageDiv);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
 
-            // Add user message to chat
-            addMessage(message, 'user');
-            input.value = '';
+    function handleKeyPress(event) {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendMessage();
+      }
+    }
 
-            // Add to debate history
-            debateHistory.push({ speaker: 'user', message: message });
-            
-            // Keep only last 4 messages (2 exchanges)
-            if (debateHistory.length > 4) {
-                debateHistory = debateHistory.slice(-4);
-            }
+    async function endDebate() {
+      if (isLoading) return;
+      isLoading = true;
 
-            // Get bot response
-            await getBotResponse();
-        }
+      const endBtn = document.getElementById('endDebateBtn');
+      endBtn.innerHTML = '<div class="loading"></div>';
+      endBtn.disabled = true;
 
-        // Add message to chat
-        function addMessage(message, sender) {
-            const messagesContainer = document.getElementById('chatMessages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${sender}`;
-            messageDiv.textContent = message;
-            messagesContainer.appendChild(messageDiv);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
+      try {
+        const response = await fetch(`${API_BASE_URL}/debate-response/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: USER_ID,
+            topic: currentDebateTopic,
+            user_position: userPosition,
+            bot_position: botPosition,
+            debate_history: debateHistory,
+            end_debate: true
+          })
+        });
 
-        // Handle enter key press
-        function handleKeyPress(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                sendMessage();
-            }
-        }
+        if (!response.ok) throw new Error('Failed to get final verdict');
+        const data = await response.json();
+        addMessage("🎯 Final Verdict: " + data.response, 'bot');
 
-        // Go back to topic selection
-        function goBack() {
-            document.getElementById('chatContainer').style.display = 'none';
-            document.getElementById('mainContainer').style.display = 'block';
-            document.getElementById('positionSelection').style.display = 'none';
-            document.getElementById('topicsGrid').style.display = 'grid';
-            
-            // Reset variables
-            currentTopic = '';
-            currentDebateTopic = '';
-            userPosition = '';
-            botPosition = '';
-            debateHistory = [];
-        }
+        document.getElementById('chatInput').disabled = true;
+        document.getElementById('sendBtn').disabled = true;
+      } catch (error) {
+        addMessage('Error ending debate. Please try again.', 'bot');
+      } finally {
+        isLoading = false;
+        endBtn.innerHTML = 'End Debate';
+      }
+    }
 
-        // Show error message
-        function showError(message) {
-            const topicsGrid = document.getElementById('topicsGrid');
-            topicsGrid.innerHTML = `<div class="error-message">${message}</div>`;
-        }
-    </script>
+    function goBack() {
+      document.getElementById('chatContainer').style.display = 'none';
+      document.getElementById('mainContainer').style.display = 'block';
+      document.getElementById('positionSelection').style.display = 'none';
+      document.getElementById('topicsGrid').style.display = 'grid';
+
+      currentTopic = '';
+      currentDebateTopic = '';
+      userPosition = '';
+      botPosition = '';
+      debateHistory = [];
+    }
+
+    function showError(message) {
+      const topicsGrid = document.getElementById('topicsGrid');
+      topicsGrid.innerHTML = `<div class="error-message">${message}</div>`;
+    }
+  </script>
 </body>
 </html>
