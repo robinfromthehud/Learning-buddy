@@ -18,13 +18,10 @@ import arxiv
 from pymongo import MongoClient
 import json
 import re
-from fastapi import Query as FastQuery
-from sentence_transformers import SentenceTransformer
-
 
 MONGO_URI = "mongodb+srv://dbuser:dbuser2280@test.stzoarv.mongodb.net/"
 DB_NAME = "learning-buddy"
-COLLECTION_NAME = "LM"
+COLLECTION_NAME = "test-1"
 
 client = MongoClient(MONGO_URI)
 db = client[DB_NAME]
@@ -149,7 +146,7 @@ def ask_query(item: Item):
             'response_by_gemini': "No context available to answer the query.",
         }
 
-    user_doc = collection.find_one({"studentId": item.id})
+    user_doc = collection.find_one({"id": item.id})
     if not user_doc:
         raise HTTPException(status_code=404, detail="User not found.")
 
@@ -344,7 +341,7 @@ class user(BaseModel):
 
 @app.post("/choices/")
 def choices(item:user):
-    user_doc = collection.find_one({"studentId": item.id})
+    user_doc = collection.find_one({"id": item.id})
     if not user_doc:
         raise HTTPException(status_code=404, detail="User not found.")
 
@@ -360,7 +357,7 @@ def choices(item:user):
                     """
                         Follow these system prompts strictly:
                         1. You are provided with academic summary and by that you must assess user's knowledge base.
-                        2. Based on the what modules user has completed and which one he is currently studying you have to suggest a list of topics of AI on which problem statement can be made.
+                        2. Based on the users prerequisite you have to suggest a list of topics of AI on which problem statement can be made.
                         3. Your topics must be relevant to the users current knowledge level, not easy and not hard.
                         4. You must give at least 2 and at max 8 topics.
                         5. You response must follow the exact pattern- "Topic1  Topic2  Topic3".
@@ -383,7 +380,7 @@ class debate(BaseModel):
 
 @app.post("/debate-topic/")
 def topic(item:debate):
-    user_doc = collection.find_one({"studentId": item.id})
+    user_doc = collection.find_one({"id": item.id})
     if not user_doc:
         raise HTTPException(status_code=404, detail="User not found.")
 
@@ -395,12 +392,17 @@ def topic(item:debate):
         config=types.GenerateContentConfig(
                 system_instruction=[
                     """
-                     You are a concise and helpful doubt-solving assistant integrated with a video lecture platform.
-                        Follow these system prompts strictly:
-                        1. You will be given a word and based on that you have to suggest a topic for debate.
-                        2. Your response must be like - "Deep Learning is really useful or hyped".
-                        3. The debate will be taking place between the user and LLM.
-                        4. You will be provided with the academic and learning profile of the user and you must use that for suggesting the problem statement.
+                    You are an assistant that generates debate topics.
+                    1. You will be given a **single concept or keyword**.
+                    2. You must generate a debate topic in the form of a **single-sided claim** (not "X or Y").
+                    For example:
+                    - "AI will make teachers obsolete"
+                    - "AI improves decision making"
+                    - "ChatGPT is disrupting education"
+                    - "Data privacy is at risk due to AI"
+                    3. Your topic must make a bold statement that can be debated IN FAVOUR or AGAINST.
+                    4. Return only the topic. Do not include explanations or context.
+                    5. You will be provided with the academic and learning profile of the user and you must use that for suggesting the problem statement.
                     """
                 ]
         )
@@ -411,55 +413,71 @@ def topic(item:debate):
     }
 
 class DebateResponseRequest(BaseModel):
-    user_id:str
+    user_id: str
     topic: str
     user_position: str  
     bot_position: str   
     debate_history: List[Dict[str, str]]
-
+    end_debate: bool = False
 
 @app.post('/debate-response/')
-def debateresponse(item:DebateResponseRequest):
-    user_doc = collection.find_one({"studentId": item.user_id})
+def debateresponse(item: DebateResponseRequest):
+    user_doc = collection.find_one({"id": item.user_id})
     if not user_doc:
         raise HTTPException(status_code=404, detail="User not found.")
 
     preferences = user_doc.get("communication_preferences_summary", "No summary available.")
     academic = user_doc.get("academic_profile_summary", "No summary available.")
+
+
+    history_formatted = "\n".join([f"{msg['speaker']}: {msg['message']}" for msg in item.debate_history])
+    content_text = (
+        f"Debate Topic: {item.topic}\n"
+        f"User is arguing: {item.user_position}\n"
+        f"AI must argue: {item.bot_position}\n"
+        f"Conversation so far:\n{history_formatted}\n"
+        f"User Preferences: {preferences}\n"
+        f"User Academic Profile: {academic}\n"
+    )
+
+    if item.end_debate:
+        content_text += (
+            "\n\nNow the debate has ended. Based on the entire conversation, declare the winner in exactly two lines. "
+            "Justify your choice clearly and respectfully. Be fair, but decisive."
+        )
+
     response = llmclient.models.generate_content(
-        contents=f"Here is the topic of discussion {item.topic},  here is the conversation history {item.debate_history}, user communication preferences {preferences}, and here is the academic profile user {academic}",
-        model="gemini-2.0-flash",
+        contents=content_text,
+        model="gemini-2.0-flash", 
         config=types.GenerateContentConfig(
-                system_instruction=[
-                    """
-                     You are engaged in a discussion with the user about a topic that is related to field artificial intelligence:
-                     1. You will be provided with the topic of debate and the academic profile and communication preferences of the user.
-                     2. You must form your responses tailored to communication preferences of the user in very detail and strict manner.
-                     3. You must keep in mind about the academic level of the user while making response.
-                     4. You must not use any bad words even if the user wants you to.
-                     5. You have to act like a person from the very first statement. Don't behave like an LLM.
-                     6. Keep Your responses limited to 40-50 words.
-                     7. You must be against the user and make valid arguments to prove the user wrong.
-                     8. If the user goes off topic answer with : "Please let's stay on the topic".
-                     9. Your answers must be relevant to the topic of debate.
-                     11. If the users asks about any different thing you answer must be "Let's not get diverted"
-                    """
-                ]
+            system_instruction=[
+                f"""
+                You are participating in a formal AI debate.
+                1. Take a strict stand on the position: {item.bot_position}.
+                2. Use a communication style matching the user's preferences.
+                3. Adapt your vocabulary and complexity to the user's academic level.
+                4. Do not represent or explore both sides—argue only your assigned side.
+                5. If the user tries to change topic, say: "Let's not get diverted."
+                6. Stay professional and respectful throughout.
+                7. Do not use inappropriate or aggressive language.
+                8. Limit each response to a maximum of 50 words.
+                9. If end_debate is True, analyze the debate history and declare a clear winner in 2 lines.
+                10. Act like a real person, not an AI model.
+                """
+            ]
         )
     )
 
-    return {
-        'response':response.text
-    }
+    return {'response': response.text}
 
 class counters(BaseModel):
     userresponse:str
     botresponse:str
 
 
-@app.post("/quiz-topics/")
+@app.post("/quiz-topics")
 async def get_quiz_topics(item: user):
-    user_doc = collection.find_one({"studentId": item.id})
+    user_doc = collection.find_one({"id": item.id})
     if not user_doc:
         raise HTTPException(status_code=404, detail="User not found.")
 
@@ -541,34 +559,33 @@ async def get_quiz_questions_flexible(item: Topic):
         raise HTTPException(status_code=400, detail=f"Invalid JSON in response: {e}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+
 
 class StudentRequest(BaseModel):
-    studentId: str
+    id: str
 
 
 @app.post("/summarize-profile-bucket/")
 async def summarize_student(data: StudentRequest):
-    student_doc = collection.find_one({"studentId":data.studentId})
+    student_doc = collection.find_one({"id":data.id})
     if not student_doc:
         raise HTTPException(status_code=404, detail="Student not found.")
-    personal_information = student_doc.get("personalInformation")
-    professional_information = student_doc.get("professionalInformation")
-    if not personal_information:
-        raise HTTPException(status_code=400, detail="personal information.")
+    learning_profile = student_doc.get("learning_profile")
+    if not learning_profile:
+        raise HTTPException(status_code=400, detail="Learning profile not found for this student.")
     
-    if not professional_information:
-        raise HTTPException(status_code=400, detail="professional information.")
 
     try:
         response = llmclient.models.generate_content(
-            contents=f"here is the data about the user : proffesional Information {professional_information}, personal information {personal_information}",
+            contents=f"here is the data about the learning profile student you need to summarize {learning_profile}",
             model="gemini-2.0-flash",
             config=types.GenerateContentConfig(
                     system_instruction=[
                         """
-                        1. You will be provided with the personal and professional information of the user.
+                        1. You will be provided with th learning profile of a user.
                         2. You must summarize the profile of the user without losing any important information.
-                        3. Keep your summary of about 40-50 words.
+                        3. Keep your summary of about 20-30 words.
                         """
                     ]
             )
@@ -578,7 +595,7 @@ async def summarize_student(data: StudentRequest):
         raise HTTPException(status_code=500, detail=f"LLM error: {str(e)}")
 
     # Step 3: Update the document
-    collection.update_one({"studentId": data.studentId}, {"$set": {"learning_profile_summary": summary}})
+    collection.update_one({"id": data.id}, {"$set": {"learning_profile_summary": summary}})
 
     return {
         'learning_profile_summary':summary
@@ -587,54 +604,51 @@ async def summarize_student(data: StudentRequest):
 
 @app.post("/summarize-preferences-bucket/")
 async def summarize_student(data: StudentRequest):
-    student_doc = collection.find_one({"studentId": data.studentId})
+    student_doc = collection.find_one({"id":data.id})
     if not student_doc:
         raise HTTPException(status_code=404, detail="Student not found.")
+    communication_preferences = student_doc.get("communication_preferences")
+    if not communication_preferences:
+        raise HTTPException(status_code=400, detail="Communication Preferences not found for this student.")
     
-    preferences = student_doc.get("cognitiveProfile", {}).get("learningPreferences", {})
-    if not preferences:
-        raise HTTPException(status_code=404, detail="Communication Preferences not found for this student.")
-    
+
     try:
         response = llmclient.models.generate_content(
-            contents=f"Here is the data about the communication preferences of the student. You need to summarize: {preferences}",
+            contents=f"here is the data about the communication preferences student you need to summarize {communication_preferences}",
             model="gemini-2.0-flash",
             config=types.GenerateContentConfig(
-                system_instruction=[
-                    """
-                    Follow these given prompts strictly:
-                    1. You will be provided with the information about the academic context of a user.
-                    2. You must summarize the profile of the user without losing any important information.
-                    3. Summarization must be effective so that tailored responses can be provided to the user.
-                    4. Keep your summary of about 15-20 words.
-                    """
-                ]
+                    system_instruction=[
+                        """
+                        Follow these given prompts strictly:
+                        1. You will be provided with the information about the academic context of a user.
+                        2. You must summarize the profile of the user without losing any important information.
+                        3. Summarization must be effective so that tailored responses can be provided to the user.
+                        4. Keep your summary of about 30-40 words.
+                        """
+                    ]
             )
         )
         summary = response.text.strip()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"LLM error: {str(e)}")
-    
-    collection.update_one(
-        {"studentId": data.studentId},
-        {"$set": {"communication_preferences_summary": summary}}
-    )
+
+    # Step 3: Update the document
+    collection.update_one({"id": data.id}, {"$set": {"communication_preferences_summary": summary}})
 
     return {
-        "communication_preferences_summary": summary
+        'communication_preferences_summary':summary
     }
-
 
 
 @app.post("/summarize-academic-bucket/")
 async def summarize_student(data: StudentRequest):
-    student_doc = collection.find_one({"studentId": data.studentId})
+    student_doc = collection.find_one({"id": data.id})
     if not student_doc:
         raise HTTPException(status_code=404, detail="Student not found.")
 
     print("Student Document:", student_doc)
 
-    academic_context = student_doc.get("Courses")
+    academic_context = student_doc.get("academic_context")
     if not academic_context:
         raise HTTPException(
             status_code=400,
@@ -649,10 +663,10 @@ async def summarize_student(data: StudentRequest):
                 system_instruction=[
                     """
                     Follow these given prompts strictly:
-                    1. You will be provided with the course coverage track of a user.
+                    1. You will be provided with the academic context of a user.
                     2. You must summarize it without losing key information.
-                    3. Must focus on what modules and submodules user has covered till now with topics highlighting where user needs improvement and what are his strengts.
-                    4. Keep the summary around 50-60 words.
+                    3. Must focus on what user has covered till now.
+                    3. Keep the summary around 30-40 words.
                     """
                 ]
             )
@@ -661,58 +675,8 @@ async def summarize_student(data: StudentRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"LLM error: {str(e)}")
 
-    collection.update_one({"studentId": data.studentId}, {"$set": {"academic_profile_summary": summary}})
+    collection.update_one({"id": data.id}, {"$set": {"academic_profile_summary": summary}})
 
     return {
         'academic_context_summary': summary
     }
-
-class Query(BaseModel):
-    query: str
-
-HQDRANT_URL = "https://966db0bd-6889-47bf-bd8a-dd54bb28ee83.europe-west3-0.gcp.cloud.qdrant.io:6333"
-HQDRANT_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.DMDqdhFufh4b2RqQgKQV3o6vvBfbUO4S7cZZieqdYdU"
-HGEMINI_API_KEY = "AIzaSyC5OFwU-OIHw3ejB431JqRZrEszRnK0who"
-HCOLLECTION_NAME = "pdf_chunks"
-
-model2 = SentenceTransformer("all-MiniLM-L6-v2")
-client2 = QdrantClient(url=HQDRANT_URL, api_key=HQDRANT_API_KEY)
-
-class RequestModel(BaseModel):
-    query: str
-    id: str
-
-@app.post("/simplify")
-async def simplify(data:RequestModel):
-    student_doc = collection.find_one({"id": data.id})
-    if not student_doc:
-        raise HTTPException(status_code=404, detail="Student not found.")
-
-    preferences = student_doc.get("communication_preferences_summary")
-    
-    query_vector = model2.encode(data.query).tolist()
-    search_result = client2.search(
-        collection_name=HCOLLECTION_NAME,
-        query_vector=query_vector,
-        limit=3
-    )
-
-    context = "\n".join([hit.payload["text"] for hit in search_result])
-    print(context)
-    response = llmclient.models.generate_content(
-        contents=f"User has highlighted some part and you have to simplify that part for the user considering user pesona : {preferences} and context of relevant to highlighted part {context}, the part which user highlighted {data.query}",
-        model="gemini-2.0-flash",
-            config=types.GenerateContentConfig(
-                system_instruction=[
-                    """
-                    Follow these given prompts strictly:
-                    1. You will be provided with the communication preferences of a user.
-                    2. You must frame your response style according to those preferences.
-                    3. You max response length should be 30 words.
-                    4. Your end goal must be simplifying the highlighted part for the user to understand.
-                    4. You must answer straight away, don't start like "Got ya","Understood".
-                    """
-                ]
-            )
-    )
-    return {"simplified": response.text}
