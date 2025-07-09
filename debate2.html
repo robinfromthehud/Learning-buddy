@@ -229,78 +229,9 @@
             border-color: #667eea;
         }
 
-        /* Improved Speech Mode Toggle Styles */
-        .speech-mode-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 8px 12px;
-            border-radius: 25px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-        }
-
-        .speech-mode-container:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .speech-mode-label {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #f38e1a;
-            letter-spacing: 0.5px;
-            white-space: nowrap;
-        }
-
-        .toggle-switch {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 24px;
-        }
-
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .toggle-slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 34px;
-        }
-
-        .toggle-slider:before {
-            position: absolute;
-            content: "";
-            height: 18px;
-            width: 18px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-
-        input:checked + .toggle-slider {
-            background-color: #4CAF50;
-        }
-
-        input:checked + .toggle-slider:before {
-            transform: translateX(26px);
-        }
-
-        /* Improved Mic Button Styles */
+        
         .mic-button {
-            display: none; /* Hidden by default */
+            /* display: none;  */
             align-items: center;
             justify-content: center;
             width: 44px;
@@ -491,7 +422,7 @@
             }
         }
   </style>
-  <!-- Add Font Awesome for microphone icon -->
+
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
@@ -523,16 +454,8 @@
     <div class="chat-input-container">
       <input type="text" class="chat-input" id="chatInput" placeholder="Type your argument..." onkeypress="handleKeyPress(event)">
       
-      <!-- Improved Speech Mode Toggle -->
-      <div class="speech-mode-container">
-        <span class="speech-mode-label">Voice Mode</span>
-        <label class="toggle-switch">
-          <input type="checkbox" id="speechToggle">
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
-      
-      <button id="micBtn" class="mic-button" title="Start Speech Recognition">
+      <!-- Voice input mic always visible -->
+      <button id="micBtn" class="mic-button" title="Click to Speak">
         <i class="fas fa-microphone"></i>
       </button>
       
@@ -551,9 +474,9 @@
     let botPosition = '';
     let debateHistory = [];
     let isLoading = false;
-    let speechToText = false;
+    // let speechToText = false;
 
-    const toggle = document.getElementById('speechToggle');
+    // const toggle = document.getElementById('speechToggle');
     const micBtn = document.getElementById('micBtn');
 
     let recognition;
@@ -562,32 +485,27 @@
     document.addEventListener('DOMContentLoaded', function() {
       loadTopics();
       
-      // Initialize speech toggle
-      toggle.addEventListener('change', () => {
-        speechToText = toggle.checked;
-        updateMicButtonVisibility();
-        if (!speechToText && isRecognizing) stopSpeechToText();
-      });
+    micBtn.style.display = 'flex';
+    micBtn.addEventListener('click', toggleSpeechRecognition);
 
       // Initialize mic button
       micBtn.addEventListener('click', toggleSpeechRecognition);
     });
 
-    function updateMicButtonVisibility() {
-      if (speechToText) {
-        micBtn.style.display = 'flex';
-      } else {
-        micBtn.style.display = 'none';
-        if (isRecognizing) stopSpeechToText();
-      }
-    }
+    // function updateMicButtonVisibility() {
+    //   if (speechToText) {
+    //     micBtn.style.display = 'flex';
+    //   } else {
+    //     micBtn.style.display = 'none';
+    //     if (isRecognizing) stopSpeechToText();
+    //   }
+    // }
 
     function toggleSpeechRecognition() {
-      if (!speechToText) return;
-      
       if (isRecognizing) {
         stopSpeechToText();
-      } else {
+      }
+      else {
         startSpeechToText();
       }
     }
@@ -607,24 +525,29 @@
       recognition.onstart = function() {
         isRecognizing = true;
         micBtn.classList.add('active');
-        micBtn.title = 'Stop Listening';
+        micBtn.title = 'Listening... Click to stop';
       };
 
       recognition.onresult = function(event) {
         const transcript = event.results[0][0].transcript;
-        document.getElementById('chatInput').value = transcript;
+        const inputBox = document.getElementById('chatInput');
+        inputBox.value = transcript;
+
+        setTimeout(() => {
+          sendMessage();
+        }, 500);
+
       };
 
       recognition.onerror = function(event) {
         console.error('Speech recognition error:', event.error);
-        micBtn.classList.remove('active');
-        isRecognizing = false;
+        stopSpeechToText();
       };
 
       recognition.onend = function() {
-        micBtn.classList.remove('active');
         isRecognizing = false;
-        micBtn.title = 'Start Speech Recognition';
+        micBtn.classList.remove('active');
+        micBtn.title = 'Click to Speak';
       };
 
       recognition.start();
@@ -636,10 +559,11 @@
       }
       isRecognizing = false;
       micBtn.classList.remove('active');
-      micBtn.title = 'Start Speech Recognition';
+      micBtn.title = 'Click to Speak';
     }
 
     async function loadTopics() {
+
       try {
         const response = await fetch(`${API_BASE_URL}/choices/`, {
           method: 'POST',

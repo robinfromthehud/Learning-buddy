@@ -22,6 +22,7 @@ dependencies = [
     "pymongo>=4.13.2",
     "pymysql>=1.1.1",
     "python-dotenv>=1.1.0",
+    "requests>=2.32.3",
     "scholarly>=1.7.11",
     "sentence-transformers>=4.1.0",
     "sqlalchemy>=2.0.41",
