@@ -212,6 +212,7 @@
             background: white;
             border-top: 1px solid #ddd;
             gap: 15px;
+            align-items: center;
         }
 
         .chat-input {
@@ -228,26 +229,129 @@
             border-color: #667eea;
         }
 
+        /* Improved Speech Mode Toggle Styles */
+        .speech-mode-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 8px 12px;
+            border-radius: 25px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .speech-mode-container:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .speech-mode-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #f38e1a;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: #4CAF50;
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+
+        /* Improved Mic Button Styles */
+        .mic-button {
+            display: none; /* Hidden by default */
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+        }
+
+        .mic-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(76, 175, 80, 0.4);
+        }
+
+        .mic-button.active {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+            animation: pulse 1.5s infinite;
+        }
+
+        .mic-button i {
+            font-size: 18px;
+        }
+
         .send-btn {
-            padding: 15px 25px;
+            padding: 12px 24px;
             background: linear-gradient(135deg, #db9915 0%, #ec8507 100%);
             color: white;
             border: none;
             border-radius: 25px;
             cursor: pointer;
             font-size: 1rem;
+            font-weight: 600;
             transition: all 0.3s ease;
             min-width: 80px;
+            box-shadow: 0 4px 8px rgba(219, 153, 21, 0.3);
         }
 
         .send-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 6px 12px rgba(219, 153, 21, 0.4);
         }
 
         .send-btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
         .loading {
@@ -275,6 +379,18 @@
 
         .back-btn:hover {
             background: rgba(255,255,255,0.3);
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(244, 67, 54, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(244, 67, 54, 0);
+            }
         }
 
         @keyframes fadeInDown {
@@ -329,6 +445,17 @@
             text-align: center;
         }
 
+        #endDebateBtn {
+            background: linear-gradient(135deg, #4a148c, #6a1b9a);
+            color: white;
+            box-shadow: 0 4px 8px rgba(74, 20, 140, 0.3);
+        }
+
+        #endDebateBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(74, 20, 140, 0.4);
+        }
+
         @media (max-width: 768px) {
             .topics-grid {
                 grid-template-columns: 1fr;
@@ -346,18 +473,26 @@
             .header h1 {
                 font-size: 2rem;
             }
+
+            .chat-input-container {
+                flex-wrap: wrap;
+            }
+
+            .speech-mode-container {
+                order: 1;
+                width: 100%;
+                justify-content: center;
+                margin-top: 10px;
+            }
+
+            .send-btn, #endDebateBtn {
+                flex: 1;
+                min-width: auto;
+            }
         }
-
-    #endDebateBtn {
-      background: linear-gradient(135deg, #4a148c, #6a1b9a);
-      color: white;
-    }
-
-    #endDebateBtn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    }
   </style>
+  <!-- Add Font Awesome for microphone icon -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
   <div class="container" id="mainContainer">
@@ -387,8 +522,22 @@
     <div class="chat-messages" id="chatMessages"></div>
     <div class="chat-input-container">
       <input type="text" class="chat-input" id="chatInput" placeholder="Type your argument..." onkeypress="handleKeyPress(event)">
+      
+      <!-- Improved Speech Mode Toggle -->
+      <div class="speech-mode-container">
+        <span class="speech-mode-label">Voice Mode</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="speechToggle">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      
+      <button id="micBtn" class="mic-button" title="Start Speech Recognition">
+        <i class="fas fa-microphone"></i>
+      </button>
+      
       <button class="send-btn" id="sendBtn" onclick="sendMessage()">Send</button>
-      <button class="send-btn" id="endDebateBtn" onclick="endDebate()">End Debate</button>
+      <button class="send-btn" id="endDebateBtn" onclick="endDebate()">End</button>
     </div>
   </div>
 
@@ -402,10 +551,93 @@
     let botPosition = '';
     let debateHistory = [];
     let isLoading = false;
+    let speechToText = false;
+
+    const toggle = document.getElementById('speechToggle');
+    const micBtn = document.getElementById('micBtn');
+
+    let recognition;
+    let isRecognizing = false;
 
     document.addEventListener('DOMContentLoaded', function() {
       loadTopics();
+      
+      // Initialize speech toggle
+      toggle.addEventListener('change', () => {
+        speechToText = toggle.checked;
+        updateMicButtonVisibility();
+        if (!speechToText && isRecognizing) stopSpeechToText();
+      });
+
+      // Initialize mic button
+      micBtn.addEventListener('click', toggleSpeechRecognition);
     });
+
+    function updateMicButtonVisibility() {
+      if (speechToText) {
+        micBtn.style.display = 'flex';
+      } else {
+        micBtn.style.display = 'none';
+        if (isRecognizing) stopSpeechToText();
+      }
+    }
+
+    function toggleSpeechRecognition() {
+      if (!speechToText) return;
+      
+      if (isRecognizing) {
+        stopSpeechToText();
+      } else {
+        startSpeechToText();
+      }
+    }
+
+    function startSpeechToText() {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        alert('Speech Recognition is not supported in your browser.');
+        return;
+      }
+
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = function() {
+        isRecognizing = true;
+        micBtn.classList.add('active');
+        micBtn.title = 'Stop Listening';
+      };
+
+      recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        document.getElementById('chatInput').value = transcript;
+      };
+
+      recognition.onerror = function(event) {
+        console.error('Speech recognition error:', event.error);
+        micBtn.classList.remove('active');
+        isRecognizing = false;
+      };
+
+      recognition.onend = function() {
+        micBtn.classList.remove('active');
+        isRecognizing = false;
+        micBtn.title = 'Start Speech Recognition';
+      };
+
+      recognition.start();
+    }
+
+    function stopSpeechToText() {
+      if (recognition) {
+        recognition.stop();
+      }
+      isRecognizing = false;
+      micBtn.classList.remove('active');
+      micBtn.title = 'Start Speech Recognition';
+    }
 
     async function loadTopics() {
       try {
@@ -560,13 +792,14 @@
             user_position: userPosition,
             bot_position: botPosition,
             debate_history: debateHistory,
+            stt: speechToText, 
             end_debate: true
           })
         });
 
         if (!response.ok) throw new Error('Failed to get final verdict');
         const data = await response.json();
-        addMessage("🎯 Final Verdict: " + data.response, 'bot');
+        addMessage("Final Verdict: " + data.response, 'bot');
 
         document.getElementById('chatInput').disabled = true;
         document.getElementById('sendBtn').disabled = true;
@@ -574,7 +807,7 @@
         addMessage('Error ending debate. Please try again.', 'bot');
       } finally {
         isLoading = false;
-        endBtn.innerHTML = 'End Debate';
+        endBtn.innerHTML = 'End';
       }
     }
 
