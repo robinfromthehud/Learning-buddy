@@ -119,6 +119,39 @@
             animation-delay: -1.5s;
         }
 
+        .course-options {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin: 30px 0;
+        }
+
+        .course-pill {
+            padding: 12px 25px;
+            border-radius: 50px;
+            background: #f8f8f8;
+            color: #333;
+            border: 2px solid #ff8a00;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: none;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.05);
+        }
+
+        .course-pill:hover {
+            background: #fff3e0;
+            transform: scale(1.03);
+        }
+
+        .course-pill.selected {
+            background: linear-gradient(135deg, #ff9a56, #ff8a00);
+            color: white;
+            border-color: #e67e22;
+        }
+
+
         @keyframes float {
             0%, 100% { transform: translateY(0px); }
             50% { transform: translateY(-10px); }
@@ -278,8 +311,18 @@
             <p>Loading your personalized topics...</p>
         </div>
 
+        <!-- Course Selection Screen -->
+        <div id="courses-screen" style="display: none;">
+            <div class="header">
+                <h2>Select Course</h2>
+                <p>Choose the course you want to be quizzed on</p>
+            </div>
+            <div id="courses-list" style="text-align:left; margin-top:20px;"></div>
+            <button class="btn" onclick="submitCourses()">Next</button>
+        </div>
+
         <!-- Topics Selection -->
-        <div id="topics-screen">
+        <div id="topics-screen" style="display: none;">
             <div class="header">
                 <h2>Choose Your Quiz Topic</h2>
                 <p>Select a topic that interests you</p>
@@ -322,37 +365,88 @@
 
         const API_BASE = 'http://localhost:8000'; // Update with your API base URL
 
-        async function fetchTopics() {
-            const userId = document.getElementById('userId').value.trim();
-            if (!userId) {
-                alert('Please enter your User ID');
-                return;
-            }
+        let selectedCourses = [];
 
-            showScreen('loading');
-
-            try {
-                const response = await fetch(`${API_BASE}/quiz-topics`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ id: userId })
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to fetch topics');
-                }
-
-                const data = await response.json();
-                displayTopics(data.topics);
-                showScreen('topics-screen');
-            } catch (error) {
-                console.error('Error fetching topics:', error);
-                alert('Error fetching topics. Please try again.');
-                showScreen('initial-screen');
-            }
+    async function fetchTopics() {
+        const userId = document.getElementById('userId').value.trim();
+        if (!userId) {
+            alert('Please enter your User ID');
+            return;
         }
+
+        showScreen('loading');
+
+        try {
+            const response = await fetch(`${API_BASE}/get-user-courses/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id: userId })
+            });
+
+            if (!response.ok) throw new Error('Failed to fetch courses');
+
+            const data = await response.json();
+            displayCourses(data.courses);
+            showScreen('courses-screen');
+        } catch (error) {
+            console.error('Error fetching courses:', error);
+            alert('Error fetching courses. Please try again.');
+            showScreen('initial-screen');
+        }
+    }
+
+    function displayCourses(courses) {
+        const container = document.getElementById('courses-list');
+        container.innerHTML = '';
+
+        courses.forEach(course => {
+            const pill = document.createElement('div');
+            pill.className = 'course-pill';
+            pill.textContent = course;
+            pill.onclick = () => {
+                pill.classList.toggle('selected');
+            };
+            container.appendChild(pill);
+        });
+    }
+
+
+    async function submitCourses() {
+        const selectedElements = document.querySelectorAll('.course-pill.selected');
+        if (selectedElements.length === 0) {
+            alert('Please select at least one course.');
+            return;
+        }
+
+        selectedCourses = Array.from(selectedElements).map(el => el.textContent.trim());
+        const userId = document.getElementById('userId').value.trim();
+
+        showScreen('loading');
+
+        try {
+            const response = await fetch(`${API_BASE}/get-quiz-topics/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id: userId, selected_courses: selectedCourses })
+            });
+
+            if (!response.ok) throw new Error('Failed to fetch topics');
+
+            const data = await response.json();
+            displayTopics(data.topics);
+            showScreen('topics-screen');
+        } catch (error) {
+            console.error('Error fetching topics:', error);
+            alert('Error fetching topics. Please try again.');
+            showScreen('courses-screen');
+        }
+    }
+
+
 
         function displayTopics(topics) {
             const container = document.getElementById('topics-container');
@@ -495,12 +589,13 @@
         }
 
         function showScreen(screenId) {
-            const screens = ['initial-screen', 'loading', 'topics-screen', 'quiz-screen', 'results-screen'];
+            const screens = ['initial-screen', 'loading', 'courses-screen', 'topics-screen', 'quiz-screen', 'results-screen'];
             screens.forEach(screen => {
                 document.getElementById(screen).style.display = 'none';
             });
             document.getElementById(screenId).style.display = 'block';
         }
+
 
         function restartQuiz() {
             clearInterval(timer);

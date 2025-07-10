@@ -475,39 +475,63 @@ class counters(BaseModel):
     botresponse:str
 
 
-@app.post("/quiz-topics")
-async def get_quiz_topics(item: user):
+
+class user(BaseModel):
+    id: str
+
+@app.post("/get-user-courses/")
+async def get_user_courses(item: user):
     user_doc = collection.find_one({"id": item.id})
     if not user_doc:
         raise HTTPException(status_code=404, detail="User not found.")
+    
+    courses = user_doc.get("courses_covered", [])
+    return {"courses": courses}
 
+
+
+class QuizRequest(BaseModel):
+    id: str
+    selected_courses: list[str]
+
+@app.post("/get-quiz-topics/")
+async def get_quiz_topics(item: QuizRequest):
+    user_doc = collection.find_one({"id": item.id})
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found.")
+    
     user_summary = user_doc.get("academic_profile_summary", "No summary available.")
+    courses_covered = user_doc.get("courses_covered", [])
 
-    print(user_summary)
+    selected_courses_str = ", ".join(item.selected_courses)
+
+    prompt = f"""
+    Here is the academic context summary: {user_summary}
+    
+    The user has selected the following course(s) for quiz generation: {selected_courses_str}.
+    """
 
     response = llmclient.models.generate_content(
-        contents=f"Here is the academic context summary based on which you have to suggest topics for quiz {user_summary}",
+        contents=prompt,
         model="gemini-2.0-flash",
         config=types.GenerateContentConfig(
-                system_instruction=[
-                    """
-                        Follow these system prompts strictly:
-                        1. You are provided with academic summary and by that you must assess user's knowledge base.
-                        2. Based on the users prerequisite you have to suggest a list of topics of AI on which the user can be quizzed.
-                        3. Your topics must be relevant to the users current knowledge level, not easy and not hard.
-                        4. You must give at least 2 and at max 8 topics.
-                        5. You response must follow the exact pattern- "Topic1  Topic2  Topic3".
-                        6. The topics must be separated by a double space.
-                    """
-                ]
+            system_instruction=[
+                """
+                Follow these system prompts strictly:
+                1. You are provided with academic summary and selected course(s). Assess user's relevant knowledge base.
+                2. Based on the user's knowledge in the selected course(s), suggest a list of quiz topics in AI based only on the selected courses.
+                3. Your topics must be relevant to the user's current level — not too easy, not too hard.
+                4. Provide at least 2 and at most 8 topics.
+                5. Format your response as: "Topic1  Topic2  Topic3".
+                6. Topics must be separated by double spaces only.
+                """
+            ]
         )
     )
 
     topics_list = response.text.strip().split("  ")
+    return {'topics': topics_list}
 
-    return {
-        'topics': topics_list
-    }
 
 class Topic(BaseModel):
     topic:str
