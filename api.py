@@ -171,7 +171,7 @@ def ask_query(item: Item):
                         4. You're also provided with the relevant context from lecture so keep in mind the way you explain should be easier than that.
                         5. Keep the explaination between 30-60 words.
                         6. Follow above given prompts strongly.
-                        7. You must not target any sepecific race, community or religion and don't use any abusive language.
+                        7. You must not target any specific race, community or religion and don't use any abusive language.
                     """
                 ]
             )
@@ -192,7 +192,7 @@ def ask_query(item: Item):
                         3. You must respond according to the communication preferences of the user, that you will be provided with.
                         4. Keep the explaination between 30-60 words.
                         6. Follow above given prompts strongly.
-                        11. You must not target any sepecific race, community or religion and don't use any abusive language.
+                        11. You must not target any specific race, community or religion and don't use any abusive language.
                     """
                 ]
             )
@@ -216,7 +216,7 @@ def ask_query(item: Item):
                         7. It would be better if you answer in points.
                         8. use - for starting a new line for points and do not use any other special symbol.
                         9. Follow above given prompts strongly.
-                        10. You must not target any sepecific race, community or religion and don't use any abusive language.
+                        10. You must not target any specific race, community or religion and don't use any abusive language.
                     """
                 ]
             )
@@ -303,7 +303,7 @@ def create_pauses(item: PauseList):
                         5. The recommendation should be single sentence like "attention in transformers".
                         6. it shouldn't contain any special characters, just a plain simple sentence.
                         7. Follow above given prompts strongly.
-                        8. You must not target any sepecific race, community or religion and don't use any abusive language.
+                        8. You must not target any specific race, community or religion and don't use any abusive language.
                     """
                 ]
         )
@@ -370,7 +370,7 @@ def choices(item:user):
                         4. You must give at least 2 and at max 8 topics.
                         5. You response must follow the exact pattern- "Topic1  Topic2  Topic3".
                         6. The topics must be separated by a double space.
-                        7. You must not target any sepecific race, community or religion and don't use any abusive language.
+                        7. You must not target any specific race, community or religion and don't use any abusive language.
                     """
                 ]
         )
@@ -412,7 +412,7 @@ def topic(item:debate):
                     3. Your topic must make a bold statement that can be debated IN FAVOUR or AGAINST.
                     4. Return only the topic. Do not include explanations or context.
                     5. You will be provided with the academic and learning profile of the user and you must use that for suggesting the problem statement.
-                    6. You must not target any sepecific race, community or religion and don't use any abusive language.
+                    6. You must not target any specific race, community or religion and don't use any abusive language.
                     """
                 ]
         )
@@ -475,7 +475,7 @@ def debateresponse(item: DebateResponseRequest):
                 8. Limit each response to a maximum of 50 words.
                 9. If end_debate is True, analyze the debate history and declare a clear winner in 2 lines.
                 10. Act like a real person, not an AI model.
-                11. You must not target any sepecific race, community or religion and don't use any abusive language and if user uses any abusive language then you must say "Let's keep this professional."
+                11. You must not target any specific race, community or religion and don't use any abusive language and if user uses any abusive language then you must say "Let's keep this professional."
                 """
             ],
             tools=[grounding_tool],
