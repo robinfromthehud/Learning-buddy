@@ -13,7 +13,7 @@ from typing import Dict, List
 from elevenlabs.client import ElevenLabs
 import base64
 from fastapi.responses import JSONResponse
-from typing import List
+from typing import List 
 import arxiv
 from pymongo import MongoClient
 import json
@@ -346,6 +346,7 @@ def create_pauses(item: PauseList):
  
 class user(BaseModel):
     id:str
+    selected_courses: List[str]
 
 @app.post("/choices/")
 def choices(item:user):
@@ -354,18 +355,19 @@ def choices(item:user):
         raise HTTPException(status_code=404, detail="User not found.")
 
     user_summary = user_doc.get("academic_profile_summary", "No summary available.")
+    all_courses = user_doc.get("courses_covered", [])
 
     print(user_summary)
 
     response = llmclient.models.generate_content(
-        contents=f"Here is the academic context summary based on which you have to suggest topics {user_summary}",
+        contents=f"Here is the academic context summary based on which you have to suggest topics {user_summary}. The user has selected the following courses to debate on: {', '.join(item.selected_courses)}.",
         model="gemini-2.0-flash",
         config=types.GenerateContentConfig(
                 system_instruction=[
                     """
                         Follow these system prompts strictly:
-                        1. You are provided with academic summary and by that you must assess user's knowledge base.
-                        2. Based on the users prerequisite you have to suggest a list of topics of AI on which problem statement can be made.
+                        1. Use selected courses and academic profile to assess user's knowledge base.
+                        2. Based on the users prerequisite and selected courses you have to suggest a list of topics of AI on which problem statement can be made.
                         3. Your topics must be relevant to the users current knowledge level, not easy and not hard.
                         4. You must give at least 2 and at max 8 topics.
                         5. You response must follow the exact pattern- "Topic1  Topic2  Topic3".
@@ -413,6 +415,8 @@ def topic(item:debate):
                     4. Return only the topic. Do not include explanations or context.
                     5. You will be provided with the academic and learning profile of the user and you must use that for suggesting the problem statement.
                     6. You must not target any specific race, community or religion and don't use any abusive language.
+                    7. The topic must be aligned with the course this concept came from.
+                    8. The topic must be aligned with the course this concept came from.
                     """
                 ]
         )
