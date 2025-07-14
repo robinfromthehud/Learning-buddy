@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>AI Debate Platform</title>
   <style>
+
     * {
             margin: 0;
             padding: 0;
@@ -41,6 +42,74 @@
             color: rgba(255,255,255,0.9);
             font-size: 1.2rem;
         }
+
+        .course-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+          gap: 20px;
+          margin: 30px auto;
+          max-width: 600px;
+          justify-items: center;
+        }
+
+        .course-card {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: white;
+          border-radius: 12px;
+          padding: 15px 25px;
+          font-size: 1rem;
+          font-weight: 500;
+          color: #333;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+          user-select: none;
+          position: relative;
+        }
+
+        .course-card:hover {
+          background: #f7b546;
+          color: white;
+          transform: translateY(-3px);
+        }
+
+        .course-card input[type="checkbox"] {
+          position: absolute;
+          opacity: 0;
+          cursor: pointer;
+        }
+
+        .course-card input[type="checkbox"]:checked + label {
+          background: linear-gradient(135deg, #f69f1d, #e07909);
+          color: white;
+          box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+        }
+
+        .course-card label {
+          cursor: pointer;
+          width: 100%;
+          text-align: center;
+        }
+
+        .styled-btn {
+          background: linear-gradient(135deg, #db9915 0%, #ec8507 100%);
+          color: white;
+          border: none;
+          padding: 12px 30px;
+          border-radius: 25px;
+          font-size: 1rem;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .styled-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 12px rgba(0,0,0,0.25);
+        }
+
 
         .topics-grid {
             display: grid;
@@ -431,6 +500,20 @@
       <h1>AI Debate Platform</h1>
       <p>Choose a topic and engage in an intelligent debate</p>
     </div>
+
+    <!-- Course Selection Screen -->
+        <div class="container" id="courseSelection">
+            <div class="header">
+                <h2>Select Course</h2>
+                <p>Please choose one or more courses to begin the debate</p>
+            </div>
+            <div id="courses-list" class="course-grid"></div>
+              <div style="text-align: center; margin-top: 30px;">
+                <button class="styled-btn" onclick="submitCourses()">Next</button>
+              </div>
+
+        </div>
+
     
     <div class="topics-grid" id="topicsGrid"></div>
     
@@ -482,8 +565,9 @@
     let recognition;
     let isRecognizing = false;
 
-    document.addEventListener('DOMContentLoaded', function() {
-      loadTopics();
+   document.addEventListener('DOMContentLoaded', function() {
+    loadCourseSelection(); 
+
       
     micBtn.style.display = 'flex';
     micBtn.addEventListener('click', toggleSpeechRecognition);
@@ -561,6 +645,86 @@
       micBtn.classList.remove('active');
       micBtn.title = 'Click to Speak';
     }
+
+
+  async function loadCourseSelection() {
+  const courseContainer = document.getElementById('courseSelection');
+  const coursesList = document.getElementById('courses-list');
+  courseContainer.style.display = 'block';
+  document.getElementById('topicsGrid').style.display = 'none';
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/get-user-courses/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: USER_ID })
+    });
+
+    if (!response.ok) throw new Error('Failed to fetch courses');
+
+    const data = await response.json();
+    const courses = data.courses;
+
+    if (courses.length === 0) {
+      coursesList.innerHTML = `<p>No courses found for this user.</p>`;
+      return;
+    }
+
+    coursesList.innerHTML = '';
+    courses.forEach(course => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'course-card';
+
+      const id = `course_${course.replace(/\s+/g, '_')}`;
+
+      wrapper.innerHTML = `
+        <input type="checkbox" id="${id}" name="course" value="${course}">
+        <label for="${id}">${course}</label>
+      `;
+
+      coursesList.appendChild(wrapper);
+    });
+
+
+    // Show the course selection screen
+    courseContainer.style.display = 'block';
+    document.getElementById('topicsGrid').style.display = 'none';
+
+
+  } catch (error) {
+    coursesList.innerHTML = `<p style="color:red;">Error loading courses. Please try again.</p>`;
+  }
+}
+
+async function submitCourses() {
+  const checkboxes = document.querySelectorAll('input[name="course"]:checked');
+  const selectedCourses = Array.from(checkboxes).map(cb => cb.value);
+
+  if (selectedCourses.length === 0) {
+    alert("Please select at least one course.");
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/choices/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: USER_ID, selected_courses: selectedCourses })
+    });
+
+    if (!response.ok) throw new Error('Failed to load topics');
+    const data = await response.json();
+
+    document.getElementById('courseSelection').style.display = 'none';
+    document.getElementById('topicsGrid').style.display = 'grid';
+    displayTopics(data.topics);
+    console.log(data.topics)
+  } catch (error) {
+    showError("Failed to load topics. Please try again.");
+  }
+}
+
+
 
     async function loadTopics() {
 
