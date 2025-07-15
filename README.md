@@ -7,14 +7,14 @@ Clone the project first.
 ```bash
 fastapi dev api.py
 ```
+### For running text simplification backend : 
+```bash
+fastapi dev backend.py
+```
+
 ### 2. Start the Frontend Application
 Open a new terminal window and run:
 ```bash
 python -m http.server 5500
 ```
 and navigate to : http://localhost:5500/main.html
-
-### For running text simplification backend : 
-```bash
-fastapi dev backend.py
-```
