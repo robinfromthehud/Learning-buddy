@@ -178,7 +178,43 @@
     #switch-user-btn:hover {
       background: #d32f2f;
     }
+
+    #popup-content {
+        white-space: normal;
+        line-height: 1.4;
+    }
+
+    .explanation-overlay h1,
+    .explanation-overlay h2,
+    .explanation-overlay h3,
+    .explanation-overlay h4,
+    .explanation-overlay h5,
+    .explanation-overlay h6 {
+      margin: 0.5em 0 0.3em;
+    }
+ 
+    .explanation-overlay p {
+      margin: 0.4em 0;
+    }
+
+    .explanation-overlay ul {
+      margin: 0.5em 0;
+      padding-left: 1.2em;
+    }
+
+    .explanation-overlay li {
+      margin-bottom: 0.3em;
+    }
+
+    .explanation-overlay strong {
+      font-weight: bold;
+    }
+
+
   </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
 </head>
 <body>
   <h1>📄 Text Assistant</h1>
@@ -205,8 +241,8 @@
       <h2>Welcome 👋</h2>
       <p>Select your learner profile:</p>
       <select id="userSelectLogin" style="padding:8px 12px; font-size:16px;">
-        <option value="user_004">Alex Chen</option>
-        <option value="user_007">Dr. Rachel kim</option>
+        <option value="ayesha_k">Ayesha (Visual Learner)</option>
+        <option value="rohan_s">Rohan (Logical Learner)</option>
       </select>
       <br/><br/>
       <button onclick="confirmUser()" style="padding:10px 20px; background:#1e88e5; color:white; border:none; border-radius:6px; font-size:14px; cursor:pointer;">Continue</button>
@@ -331,17 +367,25 @@
       setTimeout(() => { popup.style.display = "none"; }, 500);
 
       try {
-        const res = await fetch(`http://127.0.0.1:8000/simplify/`, {
+        const res = await fetch(`http://localhost:8000/simplify?user_id=${userId}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query: selectedText, id:userId}),
+          body: JSON.stringify({ query: selectedText }),
         });
 
         if (!res.ok) throw new Error(`Server responded with ${res.status}`);
         const data = await res.json();
+        console.log("Response from backend:", data);
         popupLoading.style.display = "none";
         popupContent.classList.remove("show");
-        createExplanationOverlay(data.simplified || "No explanation available", currentRange);
+        
+        let cleanedText = (data.simplified || "No explanation available").trim();
+
+        cleanedText = cleanedText.replace(/\n{2,}/g, '\n\n');
+        const formattedHTML = marked.parse(cleanedText);
+
+        createExplanationOverlay(formattedHTML, currentRange);
+
       } catch (err) {
         console.error("Backend error:", err);
         popupLoading.style.display = "none";
